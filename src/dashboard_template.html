@@ -598,7 +598,7 @@
         setSaveStatus(`Saved ${category} for ${scope}${result.apply_to_future?' and future imports':''}.`, 'ok');
       } catch (error) {
         savingCategory=false; render();
-        setSaveStatus(`Could not save category: ${error.message}. Open via Update Dashboard.command to save edits.`, 'error');
+        setSaveStatus(`Could not save category: ${error.message}. Open it with Dashboard.command (Edit) to save edits.`, 'error');
       }
     }
 
@@ -676,7 +676,7 @@
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>render());
     const sectionLinks=[...document.querySelectorAll('.tabs a')];
     if ('IntersectionObserver' in window) { const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{ if (entry.isIntersecting) sectionLinks.forEach(link=>link.classList.toggle('active', link.getAttribute('href')===`#${entry.target.id}`)); }),{rootMargin:'-45% 0px -50% 0px'}); sectionLinks.forEach(link=>{ const target=document.querySelector(link.getAttribute('href')); if (target) observer.observe(target); }); }
-    populateFilters(); render(); if (window.location.protocol === 'file:') setSaveStatus('Open via Update Dashboard.command to save category changes.', 'error');
+    populateFilters(); render(); if (window.location.protocol === 'file:') setSaveStatus('Open it with Dashboard.command (Edit) to save category changes.', 'error');
   </script>
 </body>
 </html>
