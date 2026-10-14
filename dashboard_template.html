@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>__PAGE_TITLE__</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg:#f4f5f7; --panel:#ffffff; --panel-alt:#f8f9fb; --line:#e3e6eb; --line-strong:#cfd4dc;
+      --ink:#101828; --ink-2:#475467; --ink-3:#667085;
+      --brand:#1d3b72; --brand-ink:#ffffff; --accent:#2a78d6; --accent-soft:#e8f1fc;
+      --good:#067647; --good-bg:#ecfdf3; --warn:#b54708; --warn-bg:#fffaeb; --bad:#b42318; --bad-bg:#fef3f2;
+      --series-1:#2a78d6; --series-2:#eb6834; --series-3:#1baf7a; --series-4:#eda100; --series-5:#e87ba4; --series-6:#6250d6; --series-other:#98a2b3; --series-ink:#344054;
+      --grid:#eaecf0; --shadow:0 1px 2px rgba(16,24,40,.05);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg:#0f1115; --panel:#171a20; --panel-alt:#1d2128; --line:#2a2f38; --line-strong:#3a404b;
+        --ink:#f0f2f5; --ink-2:#c3c8d0; --ink-3:#98a0ab;
+        --brand:#14284d; --brand-ink:#f0f2f5; --accent:#5598e7; --accent-soft:#1c2a3f;
+        --good:#47cd89; --good-bg:#0f2a1d; --warn:#fdb022; --warn-bg:#2d2310; --bad:#f97066; --bad-bg:#2f1414;
+        --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181; --series-6:#9085e9; --series-other:#667085; --series-ink:#d0d5dd;
+        --grid:#2a2f38; --shadow:none;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg:#0f1115; --panel:#171a20; --panel-alt:#1d2128; --line:#2a2f38; --line-strong:#3a404b;
+      --ink:#f0f2f5; --ink-2:#c3c8d0; --ink-3:#98a0ab;
+      --brand:#14284d; --brand-ink:#f0f2f5; --accent:#5598e7; --accent-soft:#1c2a3f;
+      --good:#47cd89; --good-bg:#0f2a1d; --warn:#fdb022; --warn-bg:#2d2310; --bad:#f97066; --bad-bg:#2f1414;
+      --series-1:#3987e5; --series-2:#d95926; --series-3:#199e70; --series-4:#c98500; --series-5:#d55181; --series-6:#9085e9; --series-other:#667085; --series-ink:#d0d5dd;
+      --grid:#2a2f38; --shadow:none;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; scroll-padding-top:64px; }
+    body { margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--bg); color:var(--ink); font-size:14px; }
+    .num, .kpi strong, td, .money { font-variant-numeric:tabular-nums; }
+    .masthead { background:var(--brand); color:var(--brand-ink); }
+    .masthead-inner { max-width:1500px; margin:0 auto; padding:22px 24px 18px; display:flex; gap:20px; align-items:flex-start; justify-content:space-between; }
+    .eyebrow { font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.75; }
+    h1 { margin:4px 0 6px; font-size:clamp(1.5rem,2.6vw,2rem); letter-spacing:-.02em; }
+    .masthead p { margin:0; color:inherit; opacity:.85; }
+    .masthead-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+    .status { border-radius:999px; padding:6px 11px; font-size:.8rem; font-weight:700; white-space:nowrap; }
+    .status.ok { color:var(--good); background:var(--good-bg); } .status.warn { color:var(--warn); background:var(--warn-bg); }
+    .tabs { position:sticky; top:0; z-index:5; background:var(--panel); border-bottom:1px solid var(--line); }
+    .tabs-inner { max-width:1500px; margin:0 auto; padding:0 16px; display:flex; gap:2px; overflow-x:auto; }
+    .tabs a { display:block; padding:13px 12px; color:var(--ink-2); font-weight:600; text-decoration:none; border-bottom:2px solid transparent; white-space:nowrap; }
+    .tabs a:hover, .tabs a.active { color:var(--ink); border-bottom-color:var(--accent); }
+    .shell { max-width:1500px; margin:0 auto; padding:20px 24px 40px; }
+    h2 { margin:0; font-size:1.02rem; letter-spacing:-.01em; }
+    h3 { margin:0 0 4px; font-size:.92rem; }
+    p { margin:0; color:var(--ink-3); }
+    .page-section { margin-bottom:28px; }
+    .section-title { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 12px; flex-wrap:wrap; }
+    .section-title h2 { font-size:1.15rem; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+    .filters { display:grid; grid-template-columns:repeat(7,minmax(130px,1fr)) auto; gap:12px; padding:14px 16px; margin-bottom:20px; align-items:end; }
+    label { display:block; color:var(--ink-3); font-size:.74rem; font-weight:700; margin-bottom:5px; }
+    input,select,button { font:inherit; }
+    input,select { width:100%; border:1px solid var(--line-strong); border-radius:8px; padding:8px 10px; background:var(--panel); color:var(--ink); }
+    input[type=date] { -webkit-appearance:none; appearance:none; display:block; min-width:0; min-height:38px; }
+    input[type=date]::-webkit-date-and-time-value { text-align:left; margin:0; }
+    .filters input, .filters select, .filters button { height:38px; }
+    button { border:0; border-radius:8px; padding:9px 13px; background:var(--accent); color:#fff; font-weight:700; cursor:pointer; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    button.secondary { color:var(--accent); background:var(--accent-soft); }
+    button.ghost { color:var(--brand-ink); background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25); }
+    button.link { background:transparent; color:var(--accent); padding:0; text-align:left; font-weight:600; }
+    button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+    .kpis { display:grid; grid-template-columns:repeat(6,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+    .kpi { padding:15px 16px; }
+    .kpi > span { display:block; color:var(--ink-3); font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .kpi strong { display:block; margin:7px 0 4px; font-size:1.45rem; letter-spacing:-.02em; color:var(--ink); }
+    .kpi small { display:block; color:var(--ink-3); font-size:.78rem; }
+    .kpi-button { display:block; width:100%; text-align:left; color:var(--ink); background:var(--panel); border:1px solid var(--line); font-weight:400; }
+    .kpi-button:hover { border-color:var(--accent); }
+    .kpi-button[aria-pressed="true"] { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+    .delta { font-weight:700; } .delta.good { color:var(--good); } .delta.bad { color:var(--bad); } .delta.flat { color:var(--ink-3); }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+    .grid-3-2 { display:grid; grid-template-columns:3fr 2fr; gap:16px; margin-bottom:16px; }
+    .grid-2 > *, .grid-3-2 > *, .filters > * { min-width:0; }
+    .chart { min-height:360px; padding:8px; }
+    .chart.wide { min-height:340px; margin-bottom:16px; }
+    .section { padding:16px 18px; margin-bottom:16px; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+    .section-head p { margin-top:3px; font-size:.84rem; }
+    .table-wrap { overflow:auto; max-width:100%; }
+    table { width:100%; border-collapse:collapse; font-size:.86rem; }
+    th { color:var(--ink-3); background:var(--panel-alt); font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; position:sticky; top:0; z-index:1; font-weight:700; }
+    th,td { padding:9px 12px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
+    td.num,th.num { text-align:right; }
+    td.neg { color:var(--bad); }
+    tr.subtotal td { font-weight:700; border-top:1px solid var(--line-strong); background:var(--panel-alt); }
+    tr.grand td { font-weight:800; border-top:2px solid var(--ink-2); border-bottom:3px double var(--ink-2); }
+    tr.group td { font-weight:800; color:var(--ink-2); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; padding-top:16px; border-bottom-color:var(--line-strong); }
+    tr.ratio td { color:var(--ink-2); font-style:italic; }
+    td.indent { padding-left:26px; }
+    .statement-table th:first-child, .statement-table td:first-child { position:sticky; left:0; background:var(--panel); z-index:2; min-width:200px; }
+    .statement-table th:first-child { background:var(--panel-alt); z-index:3; }
+    .statement-table tr.subtotal td:first-child, .statement-table tr.grand td:first-child { background:var(--panel-alt); }
+    .statement-table td.total, .statement-table th.total { border-left:1px solid var(--line-strong); font-weight:700; }
+    th.sortable { padding:0; } .sort-button { display:flex; align-items:center; gap:6px; width:100%; border:0; border-radius:0; padding:9px 12px; background:transparent; color:inherit; font-size:inherit; font-weight:inherit; letter-spacing:inherit; text-transform:inherit; text-align:left; }
+    th.num .sort-button { justify-content:flex-end; } .sort-button:hover { color:var(--accent); background:var(--accent-soft); } .sort-indicator { min-width:1em; color:var(--accent); }
+    .badge { display:inline-block; border-radius:999px; padding:2px 8px; font-size:.72rem; font-weight:700; background:var(--panel-alt); color:var(--ink-2); border:1px solid var(--line); }
+    .badge.review, .badge.warn { color:var(--warn); background:var(--warn-bg); border-color:transparent; }
+    .badge.ok { color:var(--good); background:var(--good-bg); border-color:transparent; }
+    .badge.bad { color:var(--bad); background:var(--bad-bg); border-color:transparent; }
+    .swatch { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:8px; vertical-align:-1px; }
+    .accounts { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; margin-bottom:16px; }
+    .account-card { padding:16px; }
+    .account-card .balance { font-size:1.5rem; font-weight:800; letter-spacing:-.02em; margin:6px 0 2px; font-variant-numeric:tabular-nums; }
+    .account-card dl { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; margin:12px 0 0; font-size:.82rem; }
+    .account-card dt { color:var(--ink-3); } .account-card dd { margin:0; text-align:right; }
+    .alerts { display:grid; gap:8px; margin-bottom:16px; }
+    .alert { padding:10px 14px; border-radius:10px; font-size:.86rem; }
+    .alert.warn { color:var(--warn); background:var(--warn-bg); } .alert.ok { color:var(--good); background:var(--good-bg); }
+    .quality-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .quality-item { border:1px solid var(--line); border-radius:10px; padding:12px; } .quality-item span { color:var(--ink-3); font-size:.8rem; } .quality-item strong { display:block; font-size:1.15rem; margin-top:3px; }
+    .pager { display:flex; flex-wrap:wrap; gap:8px; align-items:center; } .pager button { padding:7px 10px; }
+    .save-status { font-size:.8rem; margin-top:4px; } .save-status.ok { color:var(--good); } .save-status.error { color:var(--bad); } .save-status.pending { color:var(--ink-3); }
+    .transaction-category { min-width:165px; padding:5px 8px; }
+    .merchant-rule-label { display:flex; align-items:center; gap:7px; margin:6px 0 0; font-size:.78rem; font-weight:500; } .merchant-rule-label input { width:auto; margin:0; }
+    .empty { padding:28px; color:var(--ink-3); text-align:center; }
+    .footnote { color:var(--ink-3); font-size:.76rem; margin-top:12px; }
+    @media (max-width:1100px) { .kpis { grid-template-columns:repeat(3,1fr); } .filters { grid-template-columns:repeat(4,1fr); } .quality-grid { grid-template-columns:repeat(2,1fr); } .grid-3-2 { grid-template-columns:1fr; } }
+    @media (max-width:760px) { .shell { padding:14px 16px 32px; } .masthead-inner { display:block; padding:18px 16px; } .masthead-actions { justify-content:flex-start; margin-top:12px; } .grid-2 { grid-template-columns:1fr; } .filters { grid-template-columns:1fr 1fr; gap:10px; padding:14px; } .filters > :first-child, .filters > :last-child { grid-column:1 / -1; } .filters input, .filters select { font-size:16px; } .tabs-inner { padding:0 8px; scrollbar-width:none; -webkit-mask-image:linear-gradient(to right,#000 88%,transparent); mask-image:linear-gradient(to right,#000 88%,transparent); } .tabs-inner::-webkit-scrollbar { display:none; } .tabs a { padding:12px 10px; } .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .kpis > * { min-width:0; } .quality-grid { grid-template-columns:1fr; } .chart { min-height:320px; } }
+    @media print {
+      :root { color-scheme:light; }
+      body { background:#fff; font-size:11px; }
+      .tabs, .filters, .masthead-actions button, .no-print, #transactionSection { display:none !important; }
+      .masthead { background:#fff; color:#101828; border-bottom:2px solid #101828; }
+      .panel { box-shadow:none; break-inside:avoid; }
+      .page-section { break-inside:avoid-page; }
+      .table-wrap { overflow:visible; }
+    }
+  </style>
+  <script>__PLOTLY_JS__</script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <div>
+        <div class="eyebrow">Consolidated bank statement</div>
+        <h1>__PAGE_TITLE__</h1>
+        <p>__SUBTITLE__</p>
+        <p id="periodLabel"></p>
+      </div>
+      <div class="masthead-actions">
+        <span class="status __STATUS_CLASS__">__STATUS_LABEL__</span>
+        <button id="printReport" class="ghost" type="button">Print report</button>
+      </div>
+    </div>
+  </header>
+  <nav class="tabs" aria-label="Dashboard sections">
+    <div class="tabs-inner">
+      <a href="#overview">Overview</a>
+      <a href="#income-statement">Income statement</a>
+      <a href="#spending">Spending</a>
+      <a href="#accounts">Accounts &amp; reconciliation</a>
+      <a href="#transactionSection">Transactions</a>
+    </div>
+  </nav>
+
+  <main class="shell">
+    <section class="panel filters" aria-label="Dashboard filters">
+      <div><label for="timeframePreset">Timeframe</label><select id="timeframePreset"><option value="">All dates / custom</option><option value="this">This month</option><option value="1">Last month</option><option value="2">Last 2 months</option><option value="3">Last 3 months</option><option value="6">Last 6 months</option><option value="12">Last 12 months</option><option value="ytd">Year to date</option></select></div>
+      <div><label for="startDate">From</label><input id="startDate" type="date"></div>
+      <div><label for="endDate">To</label><input id="endDate" type="date"></div>
+      <div><label for="accountFilter">Account</label><select id="accountFilter"><option value="">All accounts</option></select></div>
+      <div><label for="categoryFilter">Category</label><select id="categoryFilter"><option value="">All categories</option></select></div>
+      <div><label for="kindFilter">Transaction type</label><select id="kindFilter"><option value="">All types</option></select></div>
+      <div><label for="searchFilter">Merchant or description</label><input id="searchFilter" type="search" placeholder="Search transactions"></div>
+      <button id="resetFilters" class="secondary" type="button">Reset</button>
+    </section>
+
+    <section id="overview" class="page-section">
+      <div class="section-title"><h2>Overview</h2><p id="comparisonLabel"></p></div>
+      <div class="kpis">
+        <div class="panel kpi"><span>Money in</span><strong id="incomeKpi">$0</strong><small id="incomeDelta"></small></div>
+        <div class="panel kpi"><span>Money out</span><strong id="spendKpi">$0</strong><small id="spendDelta"></small></div>
+        <div class="panel kpi"><span>Net savings</span><strong id="netKpi">$0</strong><small id="netDelta"></small></div>
+        <div class="panel kpi"><span>Savings rate</span><strong id="rateKpi">–</strong><small id="rateDelta"></small></div>
+        <div class="panel kpi"><span>Closing balance</span><strong id="balanceKpi">–</strong><small id="balanceDelta"></small></div>
+        <button id="reviewKpiButton" class="panel kpi kpi-button" type="button" aria-pressed="false"><span>Needs review</span><strong id="reviewKpi">0</strong><small id="reviewKpiHint">Click to open the review queue</small></button>
+      </div>
+      <div id="balanceChart" class="panel chart wide" aria-label="Account balance history"></div>
+      <div class="grid-3-2">
+        <div id="cashflowChart" class="panel chart" aria-label="Monthly money in and money out"></div>
+        <div id="categoryChart" class="panel chart" aria-label="Spending by category"></div>
+      </div>
+      <p class="footnote">Money in is income and cashback. Money out is spending net of refunds. Transfers between accounts are excluded from both; a transfer you recategorise on the Transactions table (for example rent paid by transfer) is counted by its new category.</p>
+    </section>
+
+    <section id="income-statement" class="page-section">
+      <div class="panel section">
+        <div class="section-head"><div><h2>Income statement</h2><p>Monthly income and spending by category for the selected filters</p></div><button id="exportStatement" class="secondary no-print" type="button">Export CSV</button></div>
+        <div class="table-wrap"><table class="statement-table"><thead id="statementHead"></thead><tbody id="statementBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="spending" class="page-section">
+      <div class="section-title"><h2>Spending</h2></div>
+      <div class="panel section">
+        <div class="section-head"><div><h2>Category breakdown</h2><p>Choose a category to drill into its transactions</p></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Category</th><th class="num">Spend</th><th class="num">Share</th><th class="num">Prior period</th><th class="num">Change</th><th class="num">Per month</th><th class="num">Transactions</th><th>Top merchant</th></tr></thead><tbody id="categoryBody"></tbody></table></div>
+      </div>
+      <div class="grid-2">
+        <div id="categoryTrendChart" class="panel chart" aria-label="Monthly spending by category"></div>
+        <div id="merchantChart" class="panel chart" aria-label="Top merchants"></div>
+      </div>
+      <div class="panel section">
+        <div class="section-head"><div><h2>Recurring payments</h2><p id="recurringSummary">Merchants charged in three or more months of the selected range</p></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Merchant</th><th>Category</th><th>Pattern</th><th class="num">Months seen</th><th class="num">Typical charge</th><th class="num">Per month</th><th class="num">Per year</th><th>Last charged</th></tr></thead><tbody id="recurringBody"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="accounts" class="page-section">
+      <div class="section-title"><h2>Accounts &amp; reconciliation</h2><p id="qualitySummary"></p></div>
+      <div id="accountCards" class="accounts"></div>
+      <div id="coverageAlerts" class="alerts"></div>
+      <div class="panel section">
+        <div class="section-head"><div><h2>Statement register</h2><p>Every imported statement period, checked against its printed balances</p></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Account</th><th>Period</th><th class="num">Opening balance</th><th class="num">Credits</th><th class="num">Debits</th><th class="num">Closing balance</th><th class="num">Difference</th><th class="num">Transactions</th><th>Status</th></tr></thead><tbody id="registerBody"></tbody></table></div>
+        <p class="footnote">A statement is reconciled only when the extracted transactions, together with the opening balance, produce the printed closing balance (and, for HSBC, the printed debit and credit totals).</p>
+      </div>
+      <div class="grid-2">
+        <div class="panel section">
+          <div class="section-head"><div><h2>Net bank transfers by account</h2><p>Net = incoming − outgoing, for the selected filters</p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Account or counterparty</th><th class="num">Incoming</th><th class="num">Outgoing</th><th class="num">Net</th></tr></thead><tbody id="transferBody"></tbody></table></div>
+          <p class="footnote">Account numbers are shown when present in the statement. Other transfers are grouped by the stated counterparty.</p>
+        </div>
+        <div class="panel section">
+          <div class="section-head"><div><h2>Data quality</h2><p>For the selected filters</p></div></div>
+          <div id="qualityGrid" class="quality-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="transactionSection" class="panel section">
+      <div class="section-head"><div><h2>Transaction drill-down</h2><p id="transactionSummary"></p><p id="saveStatus" class="save-status" role="status">Category changes save automatically.</p><label class="merchant-rule-label"><input id="applyMerchantRule" type="checkbox"> Apply category to all existing transactions from this merchant</label><label class="merchant-rule-label"><input id="applyFutureRule" type="checkbox"> Also apply expense choices to future imports from the same merchant</label></div><div class="pager"><button id="exportTransactions" class="secondary" type="button">Export CSV</button><button id="reviewQueueToggle" class="secondary" type="button">Show review queue</button><button id="prevPage" class="secondary" type="button">Previous</button><span id="pageLabel"></span><button id="nextPage" class="secondary" type="button">Next</button></div></div>
+      <div class="table-wrap"><table><thead><tr><th class="sortable" data-sort="date" aria-sort="descending"><button type="button" class="sort-button">Date <span class="sort-indicator" aria-hidden="true">▼</span></button></th><th class="sortable" data-sort="account" aria-sort="none"><button type="button" class="sort-button">Account <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="merchant" aria-sort="none"><button type="button" class="sort-button">Merchant <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="kind" aria-sort="none"><button type="button" class="sort-button">Type <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="category" aria-sort="none"><button type="button" class="sort-button">Category <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="subcategory" aria-sort="none"><button type="button" class="sort-button">Subcategory <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable num" data-sort="debit" aria-sort="none"><button type="button" class="sort-button">Debit <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable num" data-sort="credit" aria-sort="none"><button type="button" class="sort-button">Credit <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="confidence" aria-sort="none"><button type="button" class="sort-button">Confidence <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="source_page" aria-sort="none"><button type="button" class="sort-button">Source <span class="sort-indicator" aria-hidden="true"></span></button></th></tr></thead><tbody id="transactionBody"></tbody></table></div>
+    </section>
+    <p class="footnote">Generated __GENERATED_AT__ from the validated transaction ledger.</p>
+  </main>
+
+  <script>
+    const transactions = __TRANSACTIONS_JSON__;
+    const statements = __STATEMENTS_JSON__;
+    const categoryOptions = __CATEGORY_OPTIONS_JSON__;
+    const currency = new Intl.NumberFormat('en-AU', {style:'currency', currency:'AUD'});
+    const accounting = new Intl.NumberFormat('en-AU', {style:'currency', currency:'AUD', currencySign:'accounting'});
+    const integer = new Intl.NumberFormat('en-AU');
+    const monthName = new Intl.DateTimeFormat('en-AU', {month:'short', year:'numeric'});
+    const dayName = new Intl.DateTimeFormat('en-AU', {day:'numeric', month:'short', year:'numeric'});
+    const pageSize = 50;
+    const TRANSFER_KINDS = new Set(['incoming_transfer','outgoing_transfer']);
+    let page = 1;
+    let reviewOnly = false;
+    let sortColumn = 'date';
+    let sortDirection = 'desc';
+    let savingCategory = false;
+    let searchTimer;
+    let lastStatement = null;
+
+    const byId = id => document.getElementById(id);
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const sum = (rows, field) => rows.reduce((total,row) => total + Number(row[field] || 0), 0);
+    const groupSum = (rows, keyFn, valueFn) => rows.reduce((result,row) => { const key=keyFn(row); result[key]=(result[key]||0)+valueFn(row); return result; }, {});
+    const localDate = date => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+    const parseDate = value => { const [y,m,d]=String(value).split('-').map(Number); return new Date(y,(m||1)-1,d||1); };
+    const addDays = (value, days) => { const d=parseDate(value); d.setDate(d.getDate()+days); return localDate(d); };
+    const fmtMonth = key => monthName.format(parseDate(`${key}-01`));
+    const fmtDay = value => value ? dayName.format(parseDate(value)) : '';
+    const normalize = text => String(text||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    const moneyCell = (value, extra='') => `<td class="num ${extra} ${value < -0.005 ? 'neg' : ''}">${accounting.format(value)}</td>`;
+    const allDates = transactions.map(row => row.date).filter(Boolean).sort();
+    const firstDate = allDates[0] || '', lastDate = allDates[allDates.length-1] || '';
+    const accounts = [...new Set(statements.map(row => row.account).concat(transactions.map(row => row.account)).filter(Boolean))].sort();
+
+    // How a row counts in the statements. Manual category edits win over the
+    // parser's transaction kind, so a transfer recategorised as Rent becomes
+    // spending and a purchase recategorised as Transfers drops out.
+    function flowOf(row) {
+      const manual=row.category_source==='dashboard_manual', isCredit=Number(row.credit)>0;
+      if (manual && row.category==='Transfers') return 'transfer';
+      if (manual && row.category==='Income') return isCredit ? 'income' : 'expense';
+      if (TRANSFER_KINDS.has(row.kind)) return manual ? (isCredit ? 'refund' : 'expense') : 'transfer';
+      if (row.kind==='expense') return isCredit ? 'refund' : 'expense';
+      if (row.kind==='refund') return 'refund';
+      if (row.kind==='income' || row.kind==='cashback') return 'income';
+      return 'transfer';
+    }
+    const spendValue = row => row.flow==='expense' ? Number(row.debit||0) : row.flow==='refund' ? -Number(row.credit||0) : 0;
+    const incomeValue = row => row.flow==='income' ? Number(row.credit||0) - Number(row.debit||0) : 0;
+    const spendRows = rows => rows.filter(row => row.flow==='expense' || row.flow==='refund');
+    const incomeLabel = row => row.kind==='cashback' ? 'Cashback & rewards' : (!row.category || ['Income','Uncategorised'].includes(row.category) ? (row.subcategory && row.subcategory!=='Needs review' && row.subcategory!=='Manual selection' ? row.subcategory : 'Other income') : row.category);
+    function prepare(row) { row.flow=flowOf(row); row.month=String(row.date).slice(0,7); row.merchantKey=normalize(row.merchant); }
+    transactions.forEach(prepare);
+
+    // Colour follows the category, not its rank in the current filter: the
+    // five biggest categories over the whole ledger keep slots 1-5.
+    const seriesSlots = ['--series-1','--series-2','--series-3','--series-4','--series-5'];
+    const topCategories = Object.entries(groupSum(spendRows(transactions),row=>row.category,spendValue)).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
+    const accountSlots = ['--series-1','--series-2','--series-3','--series-4','--series-5','--series-6'];
+    const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const categoryColor = category => cssVar(topCategories.includes(category) ? seriesSlots[topCategories.indexOf(category)] : '--series-other');
+    const accountColor = account => cssVar(accountSlots[Math.max(0,accounts.indexOf(account)) % accountSlots.length]);
+
+    function currentRange() { return {start:byId('startDate').value, end:byId('endDate').value}; }
+    function priorRange(range) {
+      if (!range.start || !range.end || range.start > range.end) return null;
+      const start=parseDate(range.start), end=parseDate(range.end), next=parseDate(addDays(range.end,1));
+      let prior;
+      if (start.getDate()===1 && next.getDate()===1) {
+        const months=(end.getFullYear()-start.getFullYear())*12+end.getMonth()-start.getMonth()+1;
+        prior={start:localDate(new Date(start.getFullYear(),start.getMonth()-months,1)), end:localDate(new Date(start.getFullYear(),start.getMonth(),0))};
+      } else {
+        const days=Math.round((end-start)/86400000)+1;
+        prior={start:addDays(range.start,-days), end:addDays(range.start,-1)};
+      }
+      return prior.end < firstDate ? null : prior;
+    }
+    function monthsIn(range) {
+      const start=range.start||firstDate, end=range.end||lastDate, result=[];
+      if (!start || !end || start > end) return result;
+      const cursor=parseDate(start.slice(0,7)+'-01'), stop=end.slice(0,7);
+      while (localDate(cursor).slice(0,7) <= stop) { result.push(localDate(cursor).slice(0,7)); cursor.setMonth(cursor.getMonth()+1); }
+      return result;
+    }
+
+    function applyTimeframePreset(selection) {
+      if (!selection) { byId('startDate').value=firstDate; byId('endDate').value=lastDate; page=1; render(); return; }
+      const today = new Date();
+      if (selection==='this') { byId('startDate').value=localDate(new Date(today.getFullYear(), today.getMonth(), 1)); byId('endDate').value=localDate(today); }
+      else if (selection==='ytd') { byId('startDate').value=localDate(new Date(today.getFullYear(), 0, 1)); byId('endDate').value=localDate(today); }
+      else { byId('startDate').value=localDate(new Date(today.getFullYear(), today.getMonth()-Number(selection), 1)); byId('endDate').value=localDate(new Date(today.getFullYear(), today.getMonth(), 0)); }
+      page=1; render();
+    }
+    function transferAccount(row) {
+      const description=String(row.raw_description||'').trim();
+      let match=description.match(/^RTP (\d{6}) (\d{6,})\b/i);
+      if (match) return `${match[1]}-${match[2]}`;
+      match=description.match(/^TRANSFER TO ([\d-]+)\b/i);
+      if (match) return match[1];
+      match=description.match(/^Transfer (?:to|from) (.+)$/i);
+      if (match) return match[1].trim();
+      match=description.match(/\b[A-Z0-9]{8,11}N\d+\s+(.+?)\s+\d{2}[A-Z]{3}\d{4}\b/i);
+      if (match) return match[1].trim();
+      const name=String(row.merchant||'').trim();
+      return name && name!=='Bank transfer' ? name : 'Unidentified account';
+    }
+
+    function populateFilters() {
+      byId('startDate').value=firstDate; byId('endDate').value=lastDate;
+      accounts.forEach(value => byId('accountFilter').insertAdjacentHTML('beforeend', `<option value="${esc(value)}">${esc(value)}</option>`));
+      categoryOptions.forEach(value => byId('categoryFilter').insertAdjacentHTML('beforeend', `<option value="${esc(value)}">${esc(value)}</option>`));
+      [...new Set(transactions.map(row => row.kind).filter(Boolean))].sort().forEach(value => byId('kindFilter').insertAdjacentHTML('beforeend', `<option value="${esc(value)}">${esc(value.replaceAll('_',' '))}</option>`));
+    }
+
+    function filteredRows(range=currentRange()) {
+      const account=byId('accountFilter').value, category=byId('categoryFilter').value, kind=byId('kindFilter').value, query=byId('searchFilter').value.trim().toLowerCase();
+      return transactions.filter(row => (!range.start || row.date>=range.start) && (!range.end || row.date<=range.end) && (!account || row.account===account) && (!category || row.category===category) && (!kind || row.kind===kind) && (!query || `${row.merchant} ${row.raw_description}`.toLowerCase().includes(query)));
+    }
+    function selectedStatements() { const account=byId('accountFilter').value; return statements.filter(row => !account || row.account===account); }
+
+    // Daily running balance per account, rebuilt from each statement's opening
+    // balance plus its own transactions, so it is independent of the filters.
+    const balanceHistory = (() => {
+      const byPeriod={}, result={}, lastEnd={};
+      transactions.forEach(row => { (byPeriod[`${row.account}|${row.statement_start}|${row.statement_end}`] ||= []).push(row); });
+      [...statements].sort((a,b)=>String(a.statement_start).localeCompare(String(b.statement_start))).forEach(statement => {
+        if (statement.opening_balance===null || statement.opening_balance===undefined || statement.opening_balance==='') return;
+        const points=result[statement.account] ||= new Map(), previousEnd=lastEnd[statement.account];
+        // Leave missing statement periods blank rather than drawing a flat line.
+        if (previousEnd && statement.statement_start>addDays(previousEnd,1)) points.set(addDays(previousEnd,1), null);
+        lastEnd[statement.account]=statement.statement_end;
+        let balance=Number(statement.opening_balance);
+        points.set(statement.statement_start, balance);
+        const daily=groupSum(byPeriod[`${statement.account}|${statement.statement_start}|${statement.statement_end}`]||[], row=>row.date, row=>Number(row.signed_amount||0));
+        Object.keys(daily).sort().forEach(day => { balance+=daily[day]; points.set(day, Math.round(balance*100)/100); });
+        if (statement.closing_balance!==null && statement.closing_balance!==undefined && statement.closing_balance!=='') points.set(statement.statement_end, Number(statement.closing_balance));
+      });
+      Object.keys(result).forEach(account => { result[account]=[...result[account].entries()].sort((a,b)=>a[0].localeCompare(b[0])); });
+      return result;
+    })();
+    // undefined: the account has no statement yet; null: a missing statement period.
+    function balanceAt(account, day) {
+      const points=balanceHistory[account]||[]; let value;
+      for (const [date,balance] of points) { if (date>day) break; value=balance; }
+      return value;
+    }
+    function totalBalanceAt(accountList, day) {
+      const values=accountList.map(account=>balanceAt(account,day)).filter(value=>value!==undefined);
+      return values.length && !values.includes(null) ? values.reduce((a,b)=>a+b,0) : null;
+    }
+
+    function deltaText(current, previous, higherIsGood=true, asPoints=false) {
+      if (previous===null || previous===undefined || Number.isNaN(previous)) return '<span class="delta flat">No prior period to compare</span>';
+      const diff=current-previous;
+      if (Math.abs(diff) < 0.005) return '<span class="delta flat">No change vs prior period</span>';
+      const up=diff>0, good=up===higherIsGood;
+      const amount=asPoints ? `${Math.abs(diff*100).toFixed(1)} pts` : (Math.abs(previous)>0.005 ? `${Math.abs(diff/previous*100).toFixed(1)}%` : currency.format(Math.abs(diff)));
+      return `<span class="delta ${good?'good':'bad'}">${up?'▲':'▼'} ${amount}</span> vs prior period`;
+    }
+    function totals(rows) {
+      const income=rows.reduce((t,row)=>t+incomeValue(row),0), spend=rows.reduce((t,row)=>t+spendValue(row),0);
+      return {income, spend, net:income-spend, rate: income>0 ? (income-spend)/income : null};
+    }
+
+    function renderKpis(rows, priorRows, range, prior) {
+      const now=totals(rows), before=priorRows ? totals(priorRows) : null;
+      byId('incomeKpi').textContent=currency.format(now.income); byId('incomeDelta').innerHTML=deltaText(now.income, before?.income, true);
+      byId('spendKpi').textContent=currency.format(now.spend); byId('spendDelta').innerHTML=deltaText(now.spend, before?.spend, false);
+      byId('netKpi').textContent=currency.format(now.net); byId('netDelta').innerHTML=deltaText(now.net, before?.net, true);
+      byId('rateKpi').textContent=now.rate===null ? '–' : `${(now.rate*100).toFixed(1)}%`; byId('rateDelta').innerHTML=now.rate===null ? 'No income in this period' : deltaText(now.rate, before?.rate ?? null, true, true);
+      const balanceAccounts=byId('accountFilter').value ? [byId('accountFilter').value] : Object.keys(balanceHistory);
+      const endDay=range.end||lastDate, closing=totalBalanceAt(balanceAccounts,endDay), priorClosing=prior ? totalBalanceAt(balanceAccounts,prior.end) : null;
+      byId('balanceKpi').textContent=closing===null ? '–' : currency.format(closing);
+      byId('balanceDelta').innerHTML=closing===null ? 'No statement balances available' : `As at ${esc(fmtDay(endDay))} · ${priorClosing===null ? 'no prior balance' : deltaText(closing, priorClosing, true)}`;
+      byId('reviewKpi').textContent=integer.format(rows.filter(row => row.review_status==='review').length);
+      byId('comparisonLabel').textContent=prior ? `Compared with ${fmtDay(prior.start)} to ${fmtDay(prior.end)}` : '';
+      byId('periodLabel').textContent=range.start && range.end ? `Showing ${fmtDay(range.start)} to ${fmtDay(range.end)}` : '';
+    }
+
+    function theme() { return {ink:cssVar('--ink'), ink2:cssVar('--ink-2'), grid:cssVar('--grid'), panel:cssVar('--panel'), line:cssVar('--series-ink')}; }
+    function baseLayout(title, extra={}) {
+      const t=theme();
+      return Object.assign({title:{text:title,x:.02,font:{size:15,color:t.ink}},margin:{l:64,r:20,t:54,b:48},paper_bgcolor:t.panel,plot_bgcolor:t.panel,font:{family:'Inter, system-ui, sans-serif',color:t.ink2,size:12},hoverlabel:{namelength:-1},xaxis:{gridcolor:t.grid,zeroline:false,linecolor:t.grid},yaxis:{gridcolor:t.grid,zeroline:false,tickprefix:'$',separatethousands:true},showlegend:false,bargap:.3},extra);
+    }
+    const plotConfig = {responsive:true,displaylogo:false,displayModeBar:window.matchMedia('(max-width:760px)').matches ? false : 'hover',modeBarButtonsToRemove:['lasso2d','select2d']};
+
+    function renderCharts(rows, range) {
+      const t=theme(), months=monthsIn(range);
+      // Balance history
+      const balanceAccounts=(byId('accountFilter').value ? [byId('accountFilter').value] : Object.keys(balanceHistory)).filter(account=>balanceHistory[account]);
+      const start=range.start||firstDate, end=range.end||lastDate;
+      const traces=balanceAccounts.map(account => {
+        const points=balanceHistory[account].filter(([date])=>date>=start && date<=end);
+        return {name:account,x:points.map(p=>p[0]),y:points.map(p=>p[1]),type:'scatter',mode:'lines',line:{color:accountColor(account),width:2,shape:'hv'},hovertemplate:`${esc(account)}<br>%{x|%d %b %Y}<br>%{y:$,.2f}<extra></extra>`};
+      });
+      if (balanceAccounts.length>1) {
+        const days=[...new Set(traces.flatMap(trace=>trace.x))].sort();
+        traces.push({name:'Total',x:days,y:days.map(day=>totalBalanceAt(balanceAccounts,day)),type:'scatter',mode:'lines',line:{color:t.line,width:2,dash:'dot',shape:'hv'},hovertemplate:'Total<br>%{x|%d %b %Y}<br>%{y:$,.2f}<extra></extra>'});
+      }
+      Plotly.react('balanceChart', traces, baseLayout(traces.length ? 'Account balance' : 'Account balance (no statement balances available)', {showlegend:traces.length>1, legend:{orientation:'h',y:1.12,x:1,xanchor:'right'}, hovermode:'x unified'}), plotConfig);
+
+      // Money in vs money out
+      const income=groupSum(rows,row=>row.month,incomeValue), spend=groupSum(rows,row=>row.month,spendValue);
+      Plotly.react('cashflowChart',[
+        {name:'Money in',x:months,y:months.map(m=>income[m]||0),type:'bar',marker:{color:cssVar('--series-1')},hovertemplate:'Money in<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>'},
+        {name:'Money out',x:months,y:months.map(m=>spend[m]||0),type:'bar',marker:{color:cssVar('--series-2')},hovertemplate:'Money out<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>'},
+        {name:'Net savings',x:months,y:months.map(m=>(income[m]||0)-(spend[m]||0)),type:'scatter',mode:'lines+markers',line:{color:t.line,width:2},marker:{size:8,color:t.line,line:{color:t.panel,width:2}},hovertemplate:'Net savings<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>'}
+      ], baseLayout('Money in vs money out',{showlegend:true,legend:{orientation:'h',y:1.13,x:1,xanchor:'right'},barmode:'group',xaxis:{gridcolor:t.grid,type:'date',tickformat:'%b %Y',dtick:'M1'},yaxis:{gridcolor:t.grid,tickprefix:'$',separatethousands:true,zeroline:true,zerolinecolor:t.ink2}}), plotConfig);
+
+      // Category share
+      const categories=Object.entries(groupSum(spendRows(rows),row=>row.category,spendValue)).filter(x=>x[1]>0.005).sort((a,b)=>a[1]-b[1]);
+      const spendTotal=categories.reduce((t,x)=>t+x[1],0);
+      Plotly.react('categoryChart',[{x:categories.map(x=>x[1]),y:categories.map(x=>x[0]),type:'bar',orientation:'h',marker:{color:cssVar('--series-1')},text:categories.map(x=>spendTotal?`${(x[1]/spendTotal*100).toFixed(0)}%`:''),textposition:'outside',cliponaxis:false,textfont:{color:t.ink2},hovertemplate:'%{y}<br>%{x:$,.2f}<extra></extra>'}],baseLayout('Spending by category',{margin:{l:150,r:44,t:54,b:44},xaxis:{tickprefix:'$',gridcolor:t.grid,separatethousands:true},yaxis:{gridcolor:t.panel,automargin:true}}),plotConfig);
+
+      // Category trend (top five categories + other)
+      const trendRows=spendRows(rows), groups=[...topCategories, 'Other'];
+      const trendTraces=groups.map(group => {
+        const values=groupSum(trendRows.filter(row=>group==='Other' ? !topCategories.includes(row.category) : row.category===group), row=>row.month, spendValue);
+        return {name:group,x:months,y:months.map(m=>values[m]||0),type:'bar',marker:{color:group==='Other'?cssVar('--series-other'):categoryColor(group),line:{color:t.panel,width:1}},hovertemplate:`${esc(group)}<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>`};
+      }).filter(trace=>trace.y.some(value=>Math.abs(value)>0.005));
+      Plotly.react('categoryTrendChart',trendTraces,baseLayout('Monthly spending by category',{barmode:'relative',showlegend:true,legend:{orientation:'h',y:-0.18},margin:{l:64,r:20,t:54,b:80},xaxis:{gridcolor:t.grid,type:'date',tickformat:'%b %Y',dtick:'M1'}}),plotConfig);
+
+      // Top merchants
+      const merchants=Object.entries(groupSum(spendRows(rows),row=>row.merchant,spendValue)).filter(x=>x[1]>0.005).sort((a,b)=>b[1]-a[1]).slice(0,10).reverse();
+      Plotly.react('merchantChart',[{x:merchants.map(x=>x[1]),y:merchants.map(x=>x[0]),type:'bar',orientation:'h',marker:{color:cssVar('--series-1')},hovertemplate:'%{y}<br>%{x:$,.2f}<extra></extra>'}],baseLayout('Top merchants',{margin:{l:170,r:24,t:54,b:44},xaxis:{tickprefix:'$',gridcolor:t.grid,separatethousands:true},yaxis:{gridcolor:t.panel,automargin:true}}),plotConfig);
+    }
+
+    function lineValues(rows, keyFn, valueFn) {
+      const lines={};
+      rows.forEach(row => { const key=keyFn(row), line=lines[key] ||= {}; line[row.month]=(line[row.month]||0)+valueFn(row); });
+      return lines;
+    }
+    function renderIncomeStatement(rows, range) {
+      const months=monthsIn(range), count=Math.max(1,months.length);
+      const incomeLines=lineValues(rows.filter(row=>row.flow==='income'), incomeLabel, incomeValue);
+      const spendLines=lineValues(spendRows(rows), row=>row.category||'Uncategorised', spendValue);
+      const rowTotal=line=>months.reduce((t,m)=>t+(line[m]||0),0);
+      const sortLines=lines=>Object.entries(lines).sort((a,b)=>rowTotal(b[1])-rowTotal(a[1]));
+      const sumLines=lines=>{ const total={}; Object.values(lines).forEach(line=>months.forEach(m=>{ total[m]=(total[m]||0)+(line[m]||0); })); return total; };
+      const incomeTotal=sumLines(incomeLines), spendTotal=sumLines(spendLines), net={}, rate={};
+      months.forEach(m => { net[m]=(incomeTotal[m]||0)-(spendTotal[m]||0); rate[m]=(incomeTotal[m]||0)>0 ? net[m]/incomeTotal[m] : null; });
+      const totalRate=rowTotal(incomeTotal)>0 ? rowTotal(net)/rowTotal(incomeTotal) : null;
+      const cells=line=>months.map(m=>moneyCell(line[m]||0)).join('')+moneyCell(rowTotal(line),'total')+moneyCell(rowTotal(line)/count);
+      const width=months.length+3;
+      byId('statementHead').innerHTML=`<tr><th>Line item</th>${months.map(m=>`<th class="num">${esc(fmtMonth(m))}</th>`).join('')}<th class="num total">Total</th><th class="num">Monthly avg</th></tr>`;
+      const lineRow=([label,line], filterCategory) => `<tr><td class="indent">${filterCategory ? `<button type="button" class="link category-link" data-category="${esc(label)}">${esc(label)}</button>` : esc(label)}</td>${cells(line)}</tr>`;
+      const body=[
+        `<tr class="group"><td colspan="${width}">Income</td></tr>`,
+        ...(Object.keys(incomeLines).length ? sortLines(incomeLines).map(entry=>lineRow(entry,false)) : [`<tr><td class="indent" colspan="${width}">No income in this period</td></tr>`]),
+        `<tr class="subtotal"><td>Total income</td>${cells(incomeTotal)}</tr>`,
+        `<tr class="group"><td colspan="${width}">Spending</td></tr>`,
+        ...(Object.keys(spendLines).length ? sortLines(spendLines).map(entry=>lineRow(entry,true)) : [`<tr><td class="indent" colspan="${width}">No spending in this period</td></tr>`]),
+        `<tr class="subtotal"><td>Total spending</td>${cells(spendTotal)}</tr>`,
+        `<tr class="grand"><td>Net savings</td>${cells(net)}</tr>`,
+        `<tr class="ratio"><td>Savings rate</td>${months.map(m=>`<td class="num">${rate[m]===null?'–':`${(rate[m]*100).toFixed(1)}%`}</td>`).join('')}<td class="num total">${totalRate===null?'–':`${(totalRate*100).toFixed(1)}%`}</td><td class="num"></td></tr>`
+      ];
+      byId('statementBody').innerHTML=body.join('');
+      lastStatement={months, sections:[['Income',sortLines(incomeLines)],['Total income',[['',incomeTotal]]],['Spending',sortLines(spendLines)],['Total spending',[['',spendTotal]]],['Net savings',[['',net]]]], rowTotal, count};
+    }
+
+    function renderCategoryTable(rows, priorRows, range) {
+      const months=Math.max(1,monthsIn(range).length), spend=spendRows(rows), total=spend.reduce((t,row)=>t+spendValue(row),0);
+      const prior=priorRows ? groupSum(spendRows(priorRows),row=>row.category,spendValue) : null;
+      const grouped={}; spend.forEach(row => { (grouped[row.category] ||= []).push(row); });
+      const body=Object.entries(grouped).map(([category,items]) => {
+        const value=items.reduce((t,row)=>t+spendValue(row),0), merchantSpend=groupSum(items,row=>row.merchant,spendValue);
+        return {category,value,count:items.filter(row=>row.flow==='expense').length,share:total?value/total:0,prior:prior?(prior[category]||0):null,top:Object.entries(merchantSpend).sort((a,b)=>b[1]-a[1])[0]?.[0]||''};
+      }).sort((a,b)=>b.value-a.value);
+      const change=row => { if (row.prior===null) return '<td class="num">–</td>'; if (Math.abs(row.prior)<0.005) return '<td class="num"><span class="badge">New</span></td>'; const diff=(row.value-row.prior)/Math.abs(row.prior); return `<td class="num"><span class="delta ${diff>0.005?'bad':diff<-0.005?'good':'flat'}">${diff>0?'▲':diff<0?'▼':''} ${Math.abs(diff*100).toFixed(1)}%</span></td>`; };
+      byId('categoryBody').innerHTML=body.map(row=>`<tr><td><span class="swatch" style="background:${categoryColor(row.category)}"></span><button type="button" class="link category-link" data-category="${esc(row.category)}">${esc(row.category)}</button></td>${moneyCell(row.value)}<td class="num">${(row.share*100).toFixed(1)}%</td>${row.prior===null?'<td class="num">–</td>':moneyCell(row.prior)}${change(row)}${moneyCell(row.value/months)}<td class="num">${integer.format(row.count)}</td><td>${esc(row.top)}</td></tr>`).join('') + (body.length ? `<tr class="subtotal"><td>Total spending</td>${moneyCell(total)}<td class="num">100.0%</td>${prior?moneyCell(Object.values(prior).reduce((a,b)=>a+b,0)):'<td class="num">–</td>'}<td></td>${moneyCell(total/months)}<td class="num">${integer.format(body.reduce((t,row)=>t+row.count,0))}</td><td></td></tr>` : '<tr><td colspan="8" class="empty">No spending matches the filters.</td></tr>');
+    }
+
+    function renderRecurring(rows, range) {
+      const months=Math.max(1,monthsIn(range).length), groups={};
+      rows.filter(row=>row.flow==='expense' && row.merchantKey).forEach(row => { (groups[row.merchantKey] ||= []).push(row); });
+      const items=Object.values(groups).map(items => {
+        const seen=new Set(items.map(row=>row.month)); if (seen.size<3) return null;
+        const amounts=items.map(row=>Number(row.debit)).sort((a,b)=>a-b), median=amounts[Math.floor(amounts.length/2)];
+        const fixed=amounts.every(value=>Math.abs(value-median)<=Math.max(1,median*0.1));
+        const total=amounts.reduce((a,b)=>a+b,0), categories=groupSum(items,row=>row.category,()=>1);
+        return {merchant:items[items.length-1].merchant, category:Object.entries(categories).sort((a,b)=>b[1]-a[1])[0][0], fixed, months:seen.size, median, perMonth:total/months, last:items.map(row=>row.date).sort().pop()};
+      }).filter(Boolean).sort((a,b)=>Number(b.fixed)-Number(a.fixed)||b.perMonth-a.perMonth);
+      const fixedTotal=items.filter(item=>item.fixed).reduce((t,item)=>t+item.perMonth,0);
+      byId('recurringSummary').textContent=items.length ? `${items.length} merchants charged in three or more months · fixed commitments about ${currency.format(fixedTotal)} a month` : 'Merchants charged in three or more months of the selected range';
+      byId('recurringBody').innerHTML=items.slice(0,25).map(item=>`<tr><td>${esc(item.merchant)}</td><td>${esc(item.category)}</td><td><span class="badge ${item.fixed?'ok':''}">${item.fixed?'Fixed amount':'Variable'}</span></td><td class="num">${integer.format(item.months)} / ${integer.format(months)}</td>${moneyCell(item.median)}${moneyCell(item.perMonth)}${moneyCell(item.perMonth*12)}<td>${esc(fmtDay(item.last))}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">No recurring payments in the selected range.</td></tr>';
+    }
+
+    function renderTransfers(rows) {
+      const grouped={};
+      rows.filter(row=>row.flow==='transfer' && TRANSFER_KINDS.has(row.kind)).forEach(row=>{
+        const account=transferAccount(row), entry=grouped[account]||={incoming:0,outgoing:0};
+        entry.incoming+=Number(row.credit||0); entry.outgoing+=Number(row.debit||0);
+      });
+      const entries=Object.entries(grouped).sort((a,b)=>Math.abs(b[1].incoming-b[1].outgoing)-Math.abs(a[1].incoming-a[1].outgoing)||a[0].localeCompare(b[0]));
+      byId('transferBody').innerHTML=entries.map(([account,amounts])=>`<tr><td>${esc(account)}</td>${moneyCell(amounts.incoming)}${moneyCell(amounts.outgoing)}${moneyCell(amounts.incoming-amounts.outgoing)}</tr>`).join('')||'<tr><td colspan="4" class="empty">No bank transfers match the filters.</td></tr>';
+    }
+
+    function renderAccounts(range) {
+      const list=selectedStatements(), start=range.start||firstDate, end=range.end||lastDate;
+      const reconciled=list.filter(row=>row.reconciled).length;
+      byId('qualitySummary').textContent=list.length ? `${reconciled} of ${list.length} statements reconciled` : 'No statement reconciliation data';
+      const byAccount={}; list.forEach(row=>{ (byAccount[row.account] ||= []).push(row); });
+      byId('accountCards').innerHTML=Object.entries(byAccount).sort().map(([account,items]) => {
+        items.sort((a,b)=>String(a.statement_start).localeCompare(String(b.statement_start)));
+        const latest=items[items.length-1], ok=items.filter(row=>row.reconciled).length, balance=balanceAt(account,end) ?? null;
+        return `<div class="panel account-card"><h3><span class="swatch" style="background:${accountColor(account)}"></span>${esc(account)}</h3><div class="balance">${balance===null?'–':currency.format(balance)}</div><p>Balance as at ${esc(fmtDay(end))}</p><dl><dt>Statements</dt><dd>${integer.format(items.length)}</dd><dt>Reconciled</dt><dd><span class="badge ${ok===items.length?'ok':'warn'}">${ok} / ${items.length}</span></dd><dt>Coverage</dt><dd>${esc(fmtDay(items[0].statement_start))} – ${esc(fmtDay(latest.statement_end))}</dd><dt>Latest closing</dt><dd>${latest.closing_balance===null||latest.closing_balance===undefined?'–':esc(currency.format(Number(latest.closing_balance)))}</dd></dl></div>`;
+      }).join('') || '<div class="panel account-card"><p>No statement balances are available yet.</p></div>';
+      const gaps=[];
+      Object.entries(byAccount).forEach(([account,items]) => { for (let i=1;i<items.length;i++) { const expected=addDays(items[i-1].statement_end,1); if (items[i].statement_start>expected) gaps.push(`${account}: no statement covers ${fmtDay(expected)} to ${fmtDay(addDays(items[i].statement_start,-1))}. Import that statement so balances and spending are complete.`); } });
+      const unreconciled=list.filter(row=>!row.reconciled).map(row=>`${row.account}: the ${fmtDay(row.statement_start)} to ${fmtDay(row.statement_end)} statement does not reconcile.`);
+      byId('coverageAlerts').innerHTML=[...unreconciled, ...gaps].map(text=>`<div class="alert warn">⚠ ${esc(text)}</div>`).join('') || (list.length ? '<div class="alert ok">✓ Every statement reconciles and there are no gaps between statement periods.</div>' : '');
+      const shown=list.filter(row=>row.statement_end>=start && row.statement_start<=end).sort((a,b)=>String(b.statement_start).localeCompare(String(a.statement_start))||String(a.account).localeCompare(String(b.account)));
+      const value=v => v===null||v===undefined||v==='' ? '<td class="num">–</td>' : moneyCell(Number(v));
+      byId('registerBody').innerHTML=shown.map(row=>`<tr><td><span class="swatch" style="background:${accountColor(row.account)}"></span>${esc(row.account)}</td><td>${esc(fmtDay(row.statement_start))} – ${esc(fmtDay(row.statement_end))}</td>${value(row.opening_balance)}${value(row.computed_credits)}${value(row.computed_debits)}${value(row.closing_balance)}${value(row.balance_difference)}<td class="num">${integer.format(Number(row.transaction_count||0))}</td><td><span class="badge ${row.reconciled?'ok':'bad'}">${row.reconciled?'✓ Reconciled':'✕ Not reconciled'}</span></td></tr>`).join('') || '<tr><td colspan="9" class="empty">No statements overlap the selected dates.</td></tr>';
+    }
+
+    function renderQuality(rows) {
+      const review=rows.filter(row=>row.review_status==='review').length, unmatched=rows.filter(row=>row.category==='Uncategorised').length, flagged=rows.filter(row=>row.quality_flag).length, manual=rows.filter(row=>row.category_source==='dashboard_manual').length;
+      const items=[['Needs category review',integer.format(review)],['Uncategorised rows',integer.format(unmatched)],['Rows with quality flags',integer.format(flagged)],['Manually categorised',integer.format(manual)]];
+      byId('qualityGrid').innerHTML=items.map(([label,value])=>`<div class="quality-item"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join('');
+    }
+
+    function setSaveStatus(message, state='') {
+      const status=byId('saveStatus'); status.textContent=message; status.className=`save-status ${state}`;
+    }
+
+    function updateLocalCategory(row, category) {
+      row.category=category; row.subcategory='Manual selection'; row.category_source='dashboard_manual'; row.rule_id='dashboard_manual'; row.confidence=1; row.review_status='reviewed';
+      row.quality_flag=String(row.quality_flag||'').split(';').filter(flag=>flag && flag!=='needs_category_review').join(';');
+      prepare(row);
+    }
+
+    async function saveCategoryChange(row, category) {
+      if (savingCategory) return;
+      savingCategory=true;
+      const applyToMerchant=byId('applyMerchantRule').checked, applyToFuture=byId('applyFutureRule').checked;
+      document.querySelectorAll('.transaction-category').forEach(select=>select.disabled=true);
+      setSaveStatus(`Saving category for ${row.merchant}...`, 'pending');
+      try {
+        const response=await fetch('/api/update-category', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({transaction_id:row.transaction_id,category,apply_to_merchant:applyToMerchant,apply_to_future:applyToFuture})});
+        const result=await response.json().catch(()=>({}));
+        if (!response.ok || !result.ok) throw new Error(result.error || `Save failed (${response.status})`);
+        const updatedIds=new Set(result.updated_transaction_ids.map(String));
+        transactions.filter(item=>updatedIds.has(String(item.transaction_id))).forEach(item=>updateLocalCategory(item,category));
+        savingCategory=false; render();
+        const scope=result.apply_to_merchant ? `${integer.format(result.updated_count)} transactions from ${row.merchant}` : 'this transaction';
+        setSaveStatus(`Saved ${category} for ${scope}${result.apply_to_future?' and future imports':''}.`, 'ok');
+      } catch (error) {
+        savingCategory=false; render();
+        setSaveStatus(`Could not save category: ${error.message}. Open via Update Dashboard.command to save edits.`, 'error');
+      }
+    }
+
+    function sortedTransactions(rows) {
+      const numeric=['debit','credit','confidence','source_page'].includes(sortColumn);
+      return [...rows].sort((a,b)=>{
+        const left=a[sortColumn], right=b[sortColumn];
+        const blankAmount=['debit','credit'].includes(sortColumn);
+        const leftEmpty=left===null || left===undefined || left==='' || (blankAmount && Number(left)===0);
+        const rightEmpty=right===null || right===undefined || right==='' || (blankAmount && Number(right)===0);
+        if (leftEmpty!==rightEmpty) return leftEmpty?1:-1;
+        const comparison=numeric ? Number(left)-Number(right) : String(left).localeCompare(String(right),undefined,{sensitivity:'base',numeric:true});
+        if (comparison) return sortDirection==='asc'?comparison:-comparison;
+        return b.date.localeCompare(a.date)||Number(b.source_page)-Number(a.source_page);
+      });
+    }
+
+    function tableRows(rows) { return reviewOnly ? rows.filter(row=>row.review_status==='review') : rows; }
+    function renderTransactions(rows) {
+      const sorted=sortedTransactions(tableRows(rows)); const pages=Math.max(1,Math.ceil(sorted.length/pageSize)); page=Math.min(page,pages); const slice=sorted.slice((page-1)*pageSize,page*pageSize);
+      document.querySelectorAll('#transactionSection th.sortable').forEach(header=>{
+        const active=header.dataset.sort===sortColumn;
+        header.setAttribute('aria-sort',active?(sortDirection==='asc'?'ascending':'descending'):'none');
+        header.querySelector('.sort-indicator').textContent=active?(sortDirection==='asc'?'▲':'▼'):'';
+      });
+      byId('transactionSummary').textContent=`${integer.format(sorted.length)} matching transactions · debits ${currency.format(sum(sorted,'debit'))} · credits ${currency.format(sum(sorted,'credit'))}`; byId('pageLabel').textContent=`Page ${page} of ${pages}`; byId('prevPage').disabled=page<=1; byId('nextPage').disabled=page>=pages;
+      const optionsFor=row=>categoryOptions.map(value=>`<option value="${esc(value)}" ${value===row.category?'selected':''}>${esc(value)}</option>`).join('');
+      byId('transactionBody').innerHTML=slice.map(row=>`<tr title="${esc(row.raw_description)}"><td>${esc(row.date)}</td><td>${esc(row.account)}</td><td>${esc(row.merchant)}</td><td><span class="badge">${esc(row.kind.replaceAll('_',' '))}</span></td><td><select class="transaction-category" data-transaction-id="${esc(row.transaction_id)}" aria-label="Category for ${esc(row.merchant)}" ${savingCategory?'disabled':''}>${optionsFor(row)}</select></td><td>${esc(row.subcategory)}</td><td class="num">${Number(row.debit)?currency.format(row.debit):''}</td><td class="num">${Number(row.credit)?currency.format(row.credit):''}</td><td><span class="badge ${row.review_status==='review'?'review':''}">${Math.round(Number(row.confidence)*100)}% ${esc(row.review_status)}</span></td><td>p.${esc(row.source_page)}</td></tr>`).join('') || '<tr><td colspan="10" class="empty">No transactions match the filters.</td></tr>';
+      document.querySelectorAll('.transaction-category').forEach(select=>select.addEventListener('change',()=>{
+        const row=transactions.find(item=>String(item.transaction_id)===select.dataset.transactionId); if (!row) return;
+        void saveCategoryChange(row, select.value);
+      }));
+    }
+
+    function csvCell(value) { const text=String(value ?? ''); return /[",\n\r]/.test(text) || /^[=+\-@]/.test(text) ? `"${(/^[=+\-@]/.test(text) && Number.isNaN(Number(text)) ? "'" : '')}${text.replace(/"/g,'""')}"` : text; }
+    function downloadCsv(name, rows) {
+      const blob=new Blob(['﻿'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n')], {type:'text/csv;charset=utf-8'});
+      const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=name; document.body.appendChild(link); link.click(); link.remove(); setTimeout(()=>URL.revokeObjectURL(link.href), 1000);
+    }
+    const rangeSuffix = () => { const range=currentRange(); return range.start && range.end ? `_${range.start}_to_${range.end}` : ''; };
+    function exportTransactions() {
+      const rows=sortedTransactions(tableRows(filteredRows()));
+      downloadCsv(`transactions${rangeSuffix()}.csv`, [['Date','Account','Merchant','Description','Type','Category','Subcategory','Debit','Credit'], ...rows.map(row=>[row.date,row.account,row.merchant,row.raw_description,row.kind,row.category,row.subcategory,Number(row.debit)?Number(row.debit).toFixed(2):'',Number(row.credit)?Number(row.credit).toFixed(2):''])]);
+    }
+    function exportStatement() {
+      if (!lastStatement) return;
+      const {months, sections, rowTotal, count}=lastStatement, out=[['Line item', ...months.map(fmtMonth), 'Total', 'Monthly avg']];
+      sections.forEach(([heading, lines]) => {
+        if (lines.length===1 && lines[0][0]==='') { const line=lines[0][1]; out.push([heading, ...months.map(m=>(line[m]||0).toFixed(2)), rowTotal(line).toFixed(2), (rowTotal(line)/count).toFixed(2)]); return; }
+        out.push([heading]);
+        lines.forEach(([label,line]) => out.push([`  ${label}`, ...months.map(m=>(line[m]||0).toFixed(2)), rowTotal(line).toFixed(2), (rowTotal(line)/count).toFixed(2)]));
+      });
+      downloadCsv(`income_statement${rangeSuffix()}.csv`, out);
+    }
+
+    function render() {
+      const range=currentRange(), prior=priorRange(range), rows=filteredRows(range), priorRows=prior ? filteredRows(prior) : null;
+      renderKpis(rows, priorRows, range, prior); renderCharts(rows, range); renderIncomeStatement(rows, range); renderCategoryTable(rows, priorRows, range); renderRecurring(rows, range); renderTransfers(rows); renderAccounts(range); renderQuality(rows); renderTransactions(rows);
+      document.querySelectorAll('.category-link').forEach(button=>button.addEventListener('click',()=>{ byId('categoryFilter').value=button.dataset.category; page=1; render(); byId('transactionSection').scrollIntoView({behavior:'smooth'}); }));
+      byId('reviewQueueToggle').textContent=reviewOnly?'Show all transactions':'Show review queue'; byId('reviewQueueToggle').setAttribute('aria-pressed',String(reviewOnly)); byId('reviewKpiButton').setAttribute('aria-pressed',String(reviewOnly)); byId('reviewKpiHint').textContent=reviewOnly?'Review queue active · click to clear':'Click to open the review queue';
+    }
+    ['startDate','endDate'].forEach(id=>byId(id).addEventListener('change',()=>{byId('timeframePreset').value='';page=1;render();}));
+    byId('timeframePreset').addEventListener('change',()=>applyTimeframePreset(byId('timeframePreset').value));
+    ['accountFilter','categoryFilter','kindFilter'].forEach(id=>byId(id).addEventListener('change',()=>{page=1;render();})); byId('searchFilter').addEventListener('input',()=>{clearTimeout(searchTimer); searchTimer=setTimeout(()=>{page=1;render();},160);});
+    document.querySelectorAll('#transactionSection th.sortable .sort-button').forEach(button=>button.addEventListener('click',()=>{
+      const column=button.closest('th').dataset.sort;
+      if (sortColumn===column) sortDirection=sortDirection==='asc'?'desc':'asc';
+      else { sortColumn=column; sortDirection='asc'; }
+      page=1; renderTransactions(filteredRows());
+    }));
+    byId('reviewKpiButton').addEventListener('click',()=>{reviewOnly=!reviewOnly;page=1;render();byId('transactionSection').scrollIntoView({behavior:'smooth'});}); byId('reviewQueueToggle').addEventListener('click',()=>{reviewOnly=!reviewOnly;page=1;render();});
+    byId('resetFilters').addEventListener('click',()=>{ byId('accountFilter').value=''; byId('categoryFilter').value=''; byId('kindFilter').value=''; byId('searchFilter').value=''; byId('timeframePreset').value=''; byId('applyMerchantRule').checked=false; byId('applyFutureRule').checked=false; reviewOnly=false; byId('startDate').value=firstDate; byId('endDate').value=lastDate; page=1; render(); });
+    byId('prevPage').addEventListener('click',()=>{if(page>1){page--;renderTransactions(filteredRows());}}); byId('nextPage').addEventListener('click',()=>{page++;renderTransactions(filteredRows());});
+    byId('exportTransactions').addEventListener('click',exportTransactions); byId('exportStatement').addEventListener('click',exportStatement); byId('printReport').addEventListener('click',()=>window.print());
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>render());
+    const sectionLinks=[...document.querySelectorAll('.tabs a')];
+    if ('IntersectionObserver' in window) { const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{ if (entry.isIntersecting) sectionLinks.forEach(link=>link.classList.toggle('active', link.getAttribute('href')===`#${entry.target.id}`)); }),{rootMargin:'-45% 0px -50% 0px'}); sectionLinks.forEach(link=>{ const target=document.querySelector(link.getAttribute('href')); if (target) observer.observe(target); }); }
+    populateFilters(); render(); if (window.location.protocol === 'file:') setSaveStatus('Open via Update Dashboard.command to save category changes.', 'error');
+  </script>
+</body>
+</html>

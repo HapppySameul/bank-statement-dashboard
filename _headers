@@ -1,0 +1,12 @@
+# Cloudflare static-asset headers for the deployed dashboard. index.html embeds
+# every transaction, so it must never be cached, indexed, framed or leak a
+# referrer. Keep in sync with DASHBOARD_SECURITY_HEADERS in
+# bank_statement_dashboard.py (test_parser.py checks this).
+/*
+  Cache-Control: no-store, private
+  Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src 'self' data: blob:; font-src data:; connect-src 'self'; worker-src blob:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()

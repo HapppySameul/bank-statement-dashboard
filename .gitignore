@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+statement_password.txt
+merchant_categories.json
+
+# Raw and derived personal financial data
+*.pdf
+bank_transactions.csv
+statement_reconciliation.json
+statement_import_log.json
+*.tmp
+*.bak
+
+# Generated dashboard: embeds every transaction. Deployed to Cloudflare
+# straight from this machine with deploy_dashboard.sh, never through git.
+index.html
+site/
+
+# Local tooling
+.DS_Store
+.wrangler/
+.dev.vars
