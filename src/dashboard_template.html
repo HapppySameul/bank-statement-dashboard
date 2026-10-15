@@ -123,17 +123,86 @@
     .quality-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
     .quality-item { border:1px solid var(--line); border-radius:10px; padding:12px; } .quality-item span { color:var(--ink-3); font-size:.8rem; } .quality-item strong { display:block; font-size:1.15rem; margin-top:3px; }
     .pager { display:flex; flex-wrap:wrap; gap:8px; align-items:center; } .pager button { padding:7px 10px; }
+    .pager-bottom { justify-content:center; margin-top:14px; }
     .save-status { font-size:.8rem; margin-top:4px; } .save-status.ok { color:var(--good); } .save-status.error { color:var(--bad); } .save-status.pending { color:var(--ink-3); }
     .transaction-category { min-width:165px; padding:5px 8px; }
     .merchant-rule-label { display:flex; align-items:center; gap:7px; margin:6px 0 0; font-size:.78rem; font-weight:500; } .merchant-rule-label input { width:auto; margin:0; }
     .empty { padding:28px; color:var(--ink-3); text-align:center; }
     .footnote { color:var(--ink-3); font-size:.76rem; margin-top:12px; }
+    input[type="date"] { -webkit-appearance:none; appearance:none; min-width:0; min-height:38px; line-height:1.25; }
+    input[type="date"]::-webkit-date-and-time-value { text-align:left; }
+    .filters-toggle, .mobile-sort { display:none; }
+    .chip-bar { display:flex; flex-wrap:wrap; gap:8px; margin:-8px 0 18px; }
+    .chip-bar:empty { display:none; }
+    .chip { display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:999px; background:var(--accent-soft); color:var(--accent); font-weight:600; font-size:.82rem; }
+    .chip::after { content:'✕'; font-size:.72rem; opacity:.8; }
+    .chart-hint { color:var(--ink-3); font-size:.78rem; margin:-6px 0 16px; }
+    .chart .nsewdrag, .chart .bars .point { cursor:pointer; }
+    .drill { cursor:pointer; }
+    .drill:hover { background:var(--accent-soft); }
+    td.drill:hover { color:var(--accent); }
+    .sheet-backdrop { position:fixed; inset:0; background:rgba(16,24,40,.45); z-index:20; opacity:0; pointer-events:none; transition:opacity .2s; }
+    .sheet-backdrop.open { opacity:1; pointer-events:auto; }
+    .sheet { position:fixed; z-index:21; top:0; right:0; bottom:0; width:min(440px,100%); display:flex; flex-direction:column; background:var(--panel); color:var(--ink); box-shadow:0 10px 40px rgba(0,0,0,.28); transform:translateX(105%); transition:transform .22s ease; visibility:hidden; }
+    .sheet.open { transform:none; visibility:visible; }
+    .sheet-head { display:flex; gap:12px; align-items:flex-start; justify-content:space-between; padding:16px 18px 10px; }
+    .sheet-head h2 { font-size:1.1rem; } .sheet-head p { font-size:.84rem; margin-top:2px; }
+    .sheet-close { background:transparent; color:var(--ink-2); font-size:1.5rem; line-height:1; padding:2px 8px; }
+    .sheet-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:0 18px 12px; border-bottom:1px solid var(--line); }
+    .sheet-stats div { background:var(--panel-alt); border-radius:10px; padding:8px 10px; min-width:0; }
+    .sheet-stats span { display:block; color:var(--ink-3); font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .sheet-stats strong { display:block; margin-top:3px; font-size:1rem; font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; }
+    .sheet-body { flex:1; overflow:auto; padding:0 18px 12px; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+    .sheet-section-title { margin:14px 0 4px; color:var(--ink-3); font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+    .breakdown-row { display:grid; grid-template-columns:1fr auto; gap:4px 10px; padding:6px 0; font-size:.86rem; width:100%; background:transparent; color:var(--ink); font-weight:500; border-radius:0; text-align:left; }
+    .breakdown-row strong { font-variant-numeric:tabular-nums; }
+    .breakdown-row .bar { grid-column:1 / -1; height:6px; border-radius:3px; background:var(--panel-alt); overflow:hidden; }
+    .breakdown-row .bar i { display:block; height:100%; border-radius:3px; background:var(--series-1); }
+    .tx-list { list-style:none; margin:0; padding:0; }
+    .tx-list li { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 12px; padding:10px 0; border-bottom:1px solid var(--line); }
+    .tx-list .m { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .tx-list .a { text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
+    .tx-list .a.in { color:var(--good); }
+    .tx-list .d { grid-column:1 / -1; color:var(--ink-3); font-size:.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .tx-more { color:var(--ink-3); font-size:.82rem; padding:10px 0; }
+    .sheet-actions { display:flex; gap:8px; padding:12px 18px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); }
+    .sheet-actions button { flex:1; }
+    body.sheet-open { overflow:hidden; }
     @media (max-width:1100px) { .kpis { grid-template-columns:repeat(3,1fr); } .filters { grid-template-columns:repeat(4,1fr); } .quality-grid { grid-template-columns:repeat(2,1fr); } .grid-3-2 { grid-template-columns:1fr; } }
-    @media (max-width:760px) { .shell { padding:14px 16px 32px; } .masthead-inner { display:block; padding:18px 16px; } .masthead-actions { justify-content:flex-start; margin-top:12px; } .grid-2 { grid-template-columns:1fr; } .filters { grid-template-columns:1fr 1fr; gap:10px; padding:14px; } .filters > :first-child, .filters > :last-child { grid-column:1 / -1; } .filters input, .filters select { font-size:16px; } .tabs-inner { padding:0 8px; scrollbar-width:none; -webkit-mask-image:linear-gradient(to right,#000 88%,transparent); mask-image:linear-gradient(to right,#000 88%,transparent); } .tabs-inner::-webkit-scrollbar { display:none; } .tabs a { padding:12px 10px; } .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .kpis > * { min-width:0; } .quality-grid { grid-template-columns:1fr; } .chart { min-height:320px; } }
+    @media (max-width:760px) { .shell { padding:14px 16px 32px; } .masthead-inner { display:block; padding:18px 16px; } .masthead-actions { justify-content:flex-start; margin-top:12px; } .grid-2 { grid-template-columns:1fr; } .filters { grid-template-columns:1fr 1fr; gap:10px; padding:14px; } .filters > :first-child, .filters > :last-child { grid-column:1 / -1; } .filters input, .filters select { font-size:16px; } .tabs-inner { padding:0 8px; scrollbar-width:none; -webkit-mask-image:linear-gradient(to right,#000 88%,transparent); mask-image:linear-gradient(to right,#000 88%,transparent); } .tabs-inner::-webkit-scrollbar { display:none; } .tabs a { padding:12px 10px; } .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .kpis > * { min-width:0; } .quality-grid { grid-template-columns:1fr; } .chart { min-height:320px; }
+      .filters-toggle { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; margin-bottom:12px; padding:12px 14px; border:1px solid var(--line); background:var(--panel); color:var(--ink); text-align:left; }
+      .filters-toggle span:last-child { color:var(--ink-3); font-weight:500; font-size:.84rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .filters { display:none; } .filters.open { display:grid; margin-bottom:12px; }
+      .chip-bar { margin:0 0 16px; }
+      .chart-hint { margin-top:-8px; }
+      .section { padding:14px 12px; } th, td { padding:8px 10px; }
+      .statement-table th:first-child, .statement-table td:first-child { min-width:128px; max-width:150px; white-space:normal; }
+      td.indent { padding-left:16px; }
+      .sheet { top:auto; left:0; right:0; width:100%; max-height:88vh; border-radius:18px 18px 0 0; transform:translateY(105%); }
+      .sheet::before { content:''; display:block; width:40px; height:4px; border-radius:2px; background:var(--line-strong); margin:8px auto 0; }
+      .mobile-sort { display:block; margin-top:10px; }
+      .pager { width:100%; } .pager button { flex:1 1 30%; } #exportTransactions, #reviewQueueToggle { flex:1 1 40%; } .mobile-sort { order:3; flex-basis:100%; margin-top:0; } #prevPage, #nextPage, #pageLabel { display:none; }
+      #transactionSection .table-wrap { overflow:visible; }
+      #transactionSection thead { display:none; }
+      #transactionSection table, #transactionSection tbody { display:block; }
+      #transactionSection tr { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 6px; padding:11px 0; border-bottom:1px solid var(--line); }
+      #transactionSection td { border:0; padding:0; white-space:normal; }
+      #transactionSection td:empty { display:none; }
+      #transactionSection td.c-merchant { order:1; flex:1 1 50%; min-width:0; font-weight:600; }
+      #transactionSection td.c-debit, #transactionSection td.c-credit { order:2; margin-left:auto; font-weight:700; }
+      #transactionSection td.c-credit { color:var(--good); } #transactionSection td.c-credit::before { content:'+'; }
+      #transactionSection td.c-date, #transactionSection td.c-account, #transactionSection td.c-kind, #transactionSection td.c-conf { order:3; color:var(--ink-3); font-size:.8rem; }
+      #transactionSection td.c-date::after, #transactionSection td.c-account:not(:empty)::after { content:' ·'; }
+      #transactionSection td.c-kind .badge { border:0; background:transparent; padding:0; color:inherit; font-weight:500; font-size:inherit; }
+      #transactionSection td.c-conf:not(:has(.review)), #transactionSection td.c-sub, #transactionSection td.c-src { display:none; }
+      #transactionSection td.c-category { order:4; flex-basis:100%; margin-top:6px; }
+      #transactionSection td.c-category select { width:100%; font-size:16px; }
+      #transactionSection td.empty { flex-basis:100%; }
+    }
     @media print {
       :root { color-scheme:light; }
       body { background:#fff; font-size:11px; }
-      .tabs, .filters, .masthead-actions button, .no-print, #transactionSection { display:none !important; }
+      .tabs, .filters, .filters-toggle, .chip-bar, .chart-hint, .sheet, .sheet-backdrop, .masthead-actions button, .no-print, #transactionSection { display:none !important; }
       .masthead { background:#fff; color:#101828; border-bottom:2px solid #101828; }
       .panel { box-shadow:none; break-inside:avoid; }
       .page-section { break-inside:avoid-page; }
@@ -168,7 +237,8 @@
   </nav>
 
   <main class="shell">
-    <section class="panel filters" aria-label="Dashboard filters">
+    <button id="filtersToggle" class="filters-toggle" type="button" aria-expanded="false" aria-controls="filterPanel"><span>Filters ▾</span><span id="filtersSummary"></span></button>
+    <section id="filterPanel" class="panel filters" aria-label="Dashboard filters">
       <div><label for="timeframePreset">Timeframe</label><select id="timeframePreset"><option value="">All dates / custom</option><option value="this">This month</option><option value="1">Last month</option><option value="2">Last 2 months</option><option value="3">Last 3 months</option><option value="6">Last 6 months</option><option value="12">Last 12 months</option><option value="ytd">Year to date</option></select></div>
       <div><label for="startDate">From</label><input id="startDate" type="date"></div>
       <div><label for="endDate">To</label><input id="endDate" type="date"></div>
@@ -178,22 +248,24 @@
       <div><label for="searchFilter">Merchant or description</label><input id="searchFilter" type="search" placeholder="Search transactions"></div>
       <button id="resetFilters" class="secondary" type="button">Reset</button>
     </section>
+    <div id="activeChips" class="chip-bar" aria-label="Active filters"></div>
 
     <section id="overview" class="page-section">
       <div class="section-title"><h2>Overview</h2><p id="comparisonLabel"></p></div>
       <div class="kpis">
-        <div class="panel kpi"><span>Money in</span><strong id="incomeKpi">$0</strong><small id="incomeDelta"></small></div>
-        <div class="panel kpi"><span>Money out</span><strong id="spendKpi">$0</strong><small id="spendDelta"></small></div>
+        <button id="incomeKpiButton" class="panel kpi kpi-button" type="button"><span>Money in</span><strong id="incomeKpi">$0</strong><small id="incomeDelta"></small></button>
+        <button id="spendKpiButton" class="panel kpi kpi-button" type="button"><span>Money out</span><strong id="spendKpi">$0</strong><small id="spendDelta"></small></button>
         <div class="panel kpi"><span>Net savings</span><strong id="netKpi">$0</strong><small id="netDelta"></small></div>
         <div class="panel kpi"><span>Savings rate</span><strong id="rateKpi">–</strong><small id="rateDelta"></small></div>
         <div class="panel kpi"><span>Closing balance</span><strong id="balanceKpi">–</strong><small id="balanceDelta"></small></div>
-        <button id="reviewKpiButton" class="panel kpi kpi-button" type="button" aria-pressed="false"><span>Needs review</span><strong id="reviewKpi">0</strong><small id="reviewKpiHint">Click to open the review queue</small></button>
+        <button id="reviewKpiButton" class="panel kpi kpi-button" type="button" aria-pressed="false"><span>Needs review</span><strong id="reviewKpi">0</strong><small id="reviewKpiHint">Open the review queue</small></button>
       </div>
       <div id="balanceChart" class="panel chart wide" aria-label="Account balance history"></div>
       <div class="grid-3-2">
         <div id="cashflowChart" class="panel chart" aria-label="Monthly money in and money out"></div>
         <div id="categoryChart" class="panel chart" aria-label="Spending by category"></div>
       </div>
+      <p class="chart-hint">Tap any bar, point, figure or table row to see the transactions behind it.</p>
       <p class="footnote">Money in is income and cashback. Money out is spending net of refunds. Transfers between accounts are excluded from both; a transfer you recategorise on the Transactions table (for example rent paid by transfer) is counted by its new category.</p>
     </section>
 
@@ -243,11 +315,19 @@
     </section>
 
     <section id="transactionSection" class="panel section">
-      <div class="section-head"><div><h2>Transaction drill-down</h2><p id="transactionSummary"></p><p id="saveStatus" class="save-status" role="status">Category changes save automatically.</p><label class="merchant-rule-label"><input id="applyMerchantRule" type="checkbox"> Apply category to all existing transactions from this merchant</label><label class="merchant-rule-label"><input id="applyFutureRule" type="checkbox"> Also apply expense choices to future imports from the same merchant</label></div><div class="pager"><button id="exportTransactions" class="secondary" type="button">Export CSV</button><button id="reviewQueueToggle" class="secondary" type="button">Show review queue</button><button id="prevPage" class="secondary" type="button">Previous</button><span id="pageLabel"></span><button id="nextPage" class="secondary" type="button">Next</button></div></div>
+      <div class="section-head"><div><h2>Transaction drill-down</h2><p id="transactionSummary"></p><p id="saveStatus" class="save-status" role="status">Category changes save automatically.</p><label class="merchant-rule-label"><input id="applyMerchantRule" type="checkbox"> Apply category to all existing transactions from this merchant</label><label class="merchant-rule-label"><input id="applyFutureRule" type="checkbox"> Also apply expense choices to future imports from the same merchant</label></div><div class="pager"><button id="exportTransactions" class="secondary" type="button">Export CSV</button><select id="mobileSort" class="mobile-sort" aria-label="Sort transactions"><option value="date:desc">Newest first</option><option value="date:asc">Oldest first</option><option value="amount:desc">Largest amount</option><option value="merchant:asc">Merchant A–Z</option></select><button id="reviewQueueToggle" class="secondary" type="button">Show review queue</button><button id="prevPage" class="secondary" type="button">Previous</button><span id="pageLabel"></span><button id="nextPage" class="secondary" type="button">Next</button></div></div>
       <div class="table-wrap"><table><thead><tr><th class="sortable" data-sort="date" aria-sort="descending"><button type="button" class="sort-button">Date <span class="sort-indicator" aria-hidden="true">▼</span></button></th><th class="sortable" data-sort="account" aria-sort="none"><button type="button" class="sort-button">Account <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="merchant" aria-sort="none"><button type="button" class="sort-button">Merchant <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="kind" aria-sort="none"><button type="button" class="sort-button">Type <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="category" aria-sort="none"><button type="button" class="sort-button">Category <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="subcategory" aria-sort="none"><button type="button" class="sort-button">Subcategory <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable num" data-sort="debit" aria-sort="none"><button type="button" class="sort-button">Debit <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable num" data-sort="credit" aria-sort="none"><button type="button" class="sort-button">Credit <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="confidence" aria-sort="none"><button type="button" class="sort-button">Confidence <span class="sort-indicator" aria-hidden="true"></span></button></th><th class="sortable" data-sort="source_page" aria-sort="none"><button type="button" class="sort-button">Source <span class="sort-indicator" aria-hidden="true"></span></button></th></tr></thead><tbody id="transactionBody"></tbody></table></div>
+      <div class="pager pager-bottom"><button id="prevPage2" class="secondary" type="button">Previous</button><span id="pageLabel2"></span><button id="nextPage2" class="secondary" type="button">Next</button></div>
     </section>
     <p class="footnote">Generated __GENERATED_AT__ from the validated transaction ledger.</p>
   </main>
+  <div id="sheetBackdrop" class="sheet-backdrop"></div>
+  <aside id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" aria-hidden="true">
+    <div class="sheet-head"><div><h2 id="sheetTitle"></h2><p id="sheetSubtitle"></p></div><button id="sheetClose" class="sheet-close" type="button" aria-label="Close">×</button></div>
+    <div id="sheetStats" class="sheet-stats"></div>
+    <div id="sheetBody" class="sheet-body"></div>
+    <div class="sheet-actions"><button id="sheetFilter" class="secondary" type="button">Filter dashboard</button><button id="sheetTransactions" type="button">Open in Transactions</button></div>
+  </aside>
 
   <script>
     const transactions = __TRANSACTIONS_JSON__;
@@ -278,7 +358,7 @@
     const fmtMonth = key => monthName.format(parseDate(`${key}-01`));
     const fmtDay = value => value ? dayName.format(parseDate(value)) : '';
     const normalize = text => String(text||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-    const moneyCell = (value, extra='') => `<td class="num ${extra} ${value < -0.005 ? 'neg' : ''}">${accounting.format(value)}</td>`;
+    const moneyCell = (value, extra='', attrs='') => `<td class="num ${extra} ${value < -0.005 ? 'neg' : ''}"${attrs}>${accounting.format(value)}</td>`;
     const allDates = transactions.map(row => row.date).filter(Boolean).sort();
     const firstDate = allDates[0] || '', lastDate = allDates[allDates.length-1] || '';
     const accounts = [...new Set(statements.map(row => row.account).concat(transactions.map(row => row.account)).filter(Boolean))].sort();
@@ -429,11 +509,25 @@
     }
 
     function theme() { return {ink:cssVar('--ink'), ink2:cssVar('--ink-2'), grid:cssVar('--grid'), panel:cssVar('--panel'), line:cssVar('--series-ink')}; }
+    const narrowQuery = window.matchMedia('(max-width:760px)');
     function baseLayout(title, extra={}) {
       const t=theme();
-      return Object.assign({title:{text:title,x:.02,font:{size:15,color:t.ink}},margin:{l:64,r:20,t:54,b:48},paper_bgcolor:t.panel,plot_bgcolor:t.panel,font:{family:'Inter, system-ui, sans-serif',color:t.ink2,size:12},hoverlabel:{namelength:-1},xaxis:{gridcolor:t.grid,zeroline:false,linecolor:t.grid},yaxis:{gridcolor:t.grid,zeroline:false,tickprefix:'$',separatethousands:true},showlegend:false,bargap:.3},extra);
+      const layout=Object.assign({title:{text:title,x:.02,font:{size:15,color:t.ink}},margin:{l:64,r:20,t:54,b:48},paper_bgcolor:t.panel,plot_bgcolor:t.panel,font:{family:'Inter, system-ui, sans-serif',color:t.ink2,size:12},hoverlabel:{namelength:-1},xaxis:{gridcolor:t.grid,zeroline:false,linecolor:t.grid},yaxis:{gridcolor:t.grid,zeroline:false,tickprefix:'$',separatethousands:true},showlegend:false,bargap:.3},extra);
+      // Charts are for reading and tapping, never zooming or panning.
+      layout.dragmode=false;
+      layout.xaxis=Object.assign({}, layout.xaxis, {fixedrange:true});
+      layout.yaxis=Object.assign({}, layout.yaxis, {fixedrange:true});
+      if (narrowQuery.matches) {
+        // Phones: legend under the plot, tighter margins, fewer date ticks.
+        layout.title.font.size=14;
+        layout.margin=Object.assign({}, layout.margin, {l:Math.min(layout.margin.l,56), r:12, t:44, b:layout.showlegend?96:44});
+        if (layout.showlegend) layout.legend={orientation:'h',x:0,xanchor:'left',y:-0.16,yanchor:'top'};
+        if (layout.xaxis.dtick==='M1') { layout.xaxis.tickformat="%b '%y"; layout.xaxis.nticks=5; delete layout.xaxis.dtick; }
+        layout.yaxis.automargin=true;
+      }
+      return layout;
     }
-    const plotConfig = {responsive:true,displaylogo:false,displayModeBar:window.matchMedia('(max-width:760px)').matches ? false : 'hover',modeBarButtonsToRemove:['lasso2d','select2d']};
+    const plotConfig = {responsive:true,displaylogo:false,displayModeBar:false,scrollZoom:false,doubleClick:false,showTips:false};
 
     function renderCharts(rows, range) {
       const t=theme(), months=monthsIn(range);
@@ -442,21 +536,21 @@
       const start=range.start||firstDate, end=range.end||lastDate;
       const traces=balanceAccounts.map(account => {
         const points=balanceHistory[account].filter(([date])=>date>=start && date<=end);
-        return {name:account,x:points.map(p=>p[0]),y:points.map(p=>p[1]),type:'scatter',mode:'lines',line:{color:accountColor(account),width:2,shape:'hv'},hovertemplate:`${esc(account)}<br>%{x|%d %b %Y}<br>%{y:$,.2f}<extra></extra>`};
+        return {name:account,x:points.map(p=>p[0]),y:points.map(p=>p[1]),customdata:points.map(p=>p[0]),type:'scatter',mode:'lines',line:{color:accountColor(account),width:2,shape:'hv'},hovertemplate:`${esc(account)}<br>%{x|%d %b %Y}<br>%{y:$,.2f}<extra></extra>`};
       });
       if (balanceAccounts.length>1) {
         const days=[...new Set(traces.flatMap(trace=>trace.x))].sort();
-        traces.push({name:'Total',x:days,y:days.map(day=>totalBalanceAt(balanceAccounts,day)),type:'scatter',mode:'lines',line:{color:t.line,width:2,dash:'dot',shape:'hv'},hovertemplate:'Total<br>%{x|%d %b %Y}<br>%{y:$,.2f}<extra></extra>'});
+        traces.push({name:'Total',x:days,y:days.map(day=>totalBalanceAt(balanceAccounts,day)),customdata:days,type:'scatter',mode:'lines',line:{color:t.line,width:2,dash:'dot',shape:'hv'},hovertemplate:'Total<br>%{x|%d %b %Y}<br>%{y:$,.2f}<extra></extra>'});
       }
       Plotly.react('balanceChart', traces, baseLayout(traces.length ? 'Account balance' : 'Account balance (no statement balances available)', {showlegend:traces.length>1, legend:{orientation:'h',y:1.12,x:1,xanchor:'right'}, hovermode:'x unified'}), plotConfig);
 
       // Money in vs money out
       const income=groupSum(rows,row=>row.month,incomeValue), spend=groupSum(rows,row=>row.month,spendValue);
       Plotly.react('cashflowChart',[
-        {name:'Money in',x:months,y:months.map(m=>income[m]||0),type:'bar',marker:{color:cssVar('--series-1')},hovertemplate:'Money in<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>'},
-        {name:'Money out',x:months,y:months.map(m=>spend[m]||0),type:'bar',marker:{color:cssVar('--series-2')},hovertemplate:'Money out<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>'},
-        {name:'Net savings',x:months,y:months.map(m=>(income[m]||0)-(spend[m]||0)),type:'scatter',mode:'lines+markers',line:{color:t.line,width:2},marker:{size:8,color:t.line,line:{color:t.panel,width:2}},hovertemplate:'Net savings<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>'}
-      ], baseLayout('Money in vs money out',{showlegend:true,legend:{orientation:'h',y:1.13,x:1,xanchor:'right'},barmode:'group',xaxis:{gridcolor:t.grid,type:'date',tickformat:'%b %Y',dtick:'M1'},yaxis:{gridcolor:t.grid,tickprefix:'$',separatethousands:true,zeroline:true,zerolinecolor:t.ink2}}), plotConfig);
+        {name:'Money in',x:months,y:months.map(m=>income[m]||0),customdata:months,type:'bar',marker:{color:cssVar('--series-1')},hovertemplate:'Money in<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>'},
+        {name:'Money out',x:months,y:months.map(m=>spend[m]||0),customdata:months,type:'bar',marker:{color:cssVar('--series-2')},hovertemplate:'Money out<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>'},
+        {name:'Net savings',x:months,y:months.map(m=>(income[m]||0)-(spend[m]||0)),customdata:months,type:'scatter',mode:'lines+markers',line:{color:t.line,width:2},marker:{size:8,color:t.line,line:{color:t.panel,width:2}},hovertemplate:'Net savings<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>'}
+      ], baseLayout('Money in vs money out',{showlegend:true,legend:{orientation:'h',y:1.13,x:1,xanchor:'right'},barmode:'group',hovermode:'x unified',xaxis:{gridcolor:t.grid,type:'date',tickformat:'%b %Y',dtick:'M1'},yaxis:{gridcolor:t.grid,tickprefix:'$',separatethousands:true,zeroline:true,zerolinecolor:t.ink2}}), plotConfig);
 
       // Category share
       const categories=Object.entries(groupSum(spendRows(rows),row=>row.category,spendValue)).filter(x=>x[1]>0.005).sort((a,b)=>a[1]-b[1]);
@@ -467,12 +561,13 @@
       const trendRows=spendRows(rows), groups=[...topCategories, 'Other'];
       const trendTraces=groups.map(group => {
         const values=groupSum(trendRows.filter(row=>group==='Other' ? !topCategories.includes(row.category) : row.category===group), row=>row.month, spendValue);
-        return {name:group,x:months,y:months.map(m=>values[m]||0),type:'bar',marker:{color:group==='Other'?cssVar('--series-other'):categoryColor(group),line:{color:t.panel,width:1}},hovertemplate:`${esc(group)}<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>`};
+        return {name:group,x:months,y:months.map(m=>values[m]||0),customdata:months,type:'bar',marker:{color:group==='Other'?cssVar('--series-other'):categoryColor(group),line:{color:t.panel,width:1}},hovertemplate:`${esc(group)}<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>`};
       }).filter(trace=>trace.y.some(value=>Math.abs(value)>0.005));
       Plotly.react('categoryTrendChart',trendTraces,baseLayout('Monthly spending by category',{barmode:'relative',showlegend:true,legend:{orientation:'h',y:-0.18},margin:{l:64,r:20,t:54,b:80},xaxis:{gridcolor:t.grid,type:'date',tickformat:'%b %Y',dtick:'M1'}}),plotConfig);
 
       // Top merchants
       const merchants=Object.entries(groupSum(spendRows(rows),row=>row.merchant,spendValue)).filter(x=>x[1]>0.005).sort((a,b)=>b[1]-a[1]).slice(0,10).reverse();
+      bindChartTaps();
       Plotly.react('merchantChart',[{x:merchants.map(x=>x[1]),y:merchants.map(x=>x[0]),type:'bar',orientation:'h',marker:{color:cssVar('--series-1')},hovertemplate:'%{y}<br>%{x:$,.2f}<extra></extra>'}],baseLayout('Top merchants',{margin:{l:170,r:24,t:54,b:44},xaxis:{tickprefix:'$',gridcolor:t.grid,separatethousands:true},yaxis:{gridcolor:t.panel,automargin:true}}),plotConfig);
     }
 
@@ -491,18 +586,18 @@
       const incomeTotal=sumLines(incomeLines), spendTotal=sumLines(spendLines), net={}, rate={};
       months.forEach(m => { net[m]=(incomeTotal[m]||0)-(spendTotal[m]||0); rate[m]=(incomeTotal[m]||0)>0 ? net[m]/incomeTotal[m] : null; });
       const totalRate=rowTotal(incomeTotal)>0 ? rowTotal(net)/rowTotal(incomeTotal) : null;
-      const cells=line=>months.map(m=>moneyCell(line[m]||0)).join('')+moneyCell(rowTotal(line),'total')+moneyCell(rowTotal(line)/count);
+      const cells=(line, drill='') => months.map(m=>moneyCell(line[m]||0, drill?'drill':'', drill?` data-drill="${drill}" data-month="${m}"`:'')).join('')+moneyCell(rowTotal(line), drill?'total drill':'total', drill?` data-drill="${drill}" data-month=""`:'')+moneyCell(rowTotal(line)/count);
       const width=months.length+3;
       byId('statementHead').innerHTML=`<tr><th>Line item</th>${months.map(m=>`<th class="num">${esc(fmtMonth(m))}</th>`).join('')}<th class="num total">Total</th><th class="num">Monthly avg</th></tr>`;
-      const lineRow=([label,line], filterCategory) => `<tr><td class="indent">${filterCategory ? `<button type="button" class="link category-link" data-category="${esc(label)}">${esc(label)}</button>` : esc(label)}</td>${cells(line)}</tr>`;
+      const lineRow=([label,line], isSpend) => { const drill=`${isSpend?'spend':'income'}|${esc(label)}`; return `<tr><td class="indent"><button type="button" class="link drill-link" data-drill="${drill}" data-month="">${esc(label)}</button></td>${cells(line, drill)}</tr>`; };
       const body=[
         `<tr class="group"><td colspan="${width}">Income</td></tr>`,
         ...(Object.keys(incomeLines).length ? sortLines(incomeLines).map(entry=>lineRow(entry,false)) : [`<tr><td class="indent" colspan="${width}">No income in this period</td></tr>`]),
-        `<tr class="subtotal"><td>Total income</td>${cells(incomeTotal)}</tr>`,
+        `<tr class="subtotal"><td>Total income</td>${cells(incomeTotal,'income|')}</tr>`,
         `<tr class="group"><td colspan="${width}">Spending</td></tr>`,
         ...(Object.keys(spendLines).length ? sortLines(spendLines).map(entry=>lineRow(entry,true)) : [`<tr><td class="indent" colspan="${width}">No spending in this period</td></tr>`]),
-        `<tr class="subtotal"><td>Total spending</td>${cells(spendTotal)}</tr>`,
-        `<tr class="grand"><td>Net savings</td>${cells(net)}</tr>`,
+        `<tr class="subtotal"><td>Total spending</td>${cells(spendTotal,'spend|')}</tr>`,
+        `<tr class="grand"><td>Net savings</td>${cells(net,'net|')}</tr>`,
         `<tr class="ratio"><td>Savings rate</td>${months.map(m=>`<td class="num">${rate[m]===null?'–':`${(rate[m]*100).toFixed(1)}%`}</td>`).join('')}<td class="num total">${totalRate===null?'–':`${(totalRate*100).toFixed(1)}%`}</td><td class="num"></td></tr>`
       ];
       byId('statementBody').innerHTML=body.join('');
@@ -518,7 +613,7 @@
         return {category,value,count:items.filter(row=>row.flow==='expense').length,share:total?value/total:0,prior:prior?(prior[category]||0):null,top:Object.entries(merchantSpend).sort((a,b)=>b[1]-a[1])[0]?.[0]||''};
       }).sort((a,b)=>b.value-a.value);
       const change=row => { if (row.prior===null) return '<td class="num">–</td>'; if (Math.abs(row.prior)<0.005) return '<td class="num"><span class="badge">New</span></td>'; const diff=(row.value-row.prior)/Math.abs(row.prior); return `<td class="num"><span class="delta ${diff>0.005?'bad':diff<-0.005?'good':'flat'}">${diff>0?'▲':diff<0?'▼':''} ${Math.abs(diff*100).toFixed(1)}%</span></td>`; };
-      byId('categoryBody').innerHTML=body.map(row=>`<tr><td><span class="swatch" style="background:${categoryColor(row.category)}"></span><button type="button" class="link category-link" data-category="${esc(row.category)}">${esc(row.category)}</button></td>${moneyCell(row.value)}<td class="num">${(row.share*100).toFixed(1)}%</td>${row.prior===null?'<td class="num">–</td>':moneyCell(row.prior)}${change(row)}${moneyCell(row.value/months)}<td class="num">${integer.format(row.count)}</td><td>${esc(row.top)}</td></tr>`).join('') + (body.length ? `<tr class="subtotal"><td>Total spending</td>${moneyCell(total)}<td class="num">100.0%</td>${prior?moneyCell(Object.values(prior).reduce((a,b)=>a+b,0)):'<td class="num">–</td>'}<td></td>${moneyCell(total/months)}<td class="num">${integer.format(body.reduce((t,row)=>t+row.count,0))}</td><td></td></tr>` : '<tr><td colspan="8" class="empty">No spending matches the filters.</td></tr>');
+      byId('categoryBody').innerHTML=body.map(row=>`<tr><td><span class="swatch" style="background:${categoryColor(row.category)}"></span><button type="button" class="link drill-link" data-drill="spend|${esc(row.category)}" data-month="">${esc(row.category)}</button></td>${moneyCell(row.value)}<td class="num">${(row.share*100).toFixed(1)}%</td>${row.prior===null?'<td class="num">–</td>':moneyCell(row.prior)}${change(row)}${moneyCell(row.value/months)}<td class="num">${integer.format(row.count)}</td><td>${esc(row.top)}</td></tr>`).join('') + (body.length ? `<tr class="subtotal"><td>Total spending</td>${moneyCell(total)}<td class="num">100.0%</td>${prior?moneyCell(Object.values(prior).reduce((a,b)=>a+b,0)):'<td class="num">–</td>'}<td></td>${moneyCell(total/months)}<td class="num">${integer.format(body.reduce((t,row)=>t+row.count,0))}</td><td></td></tr>` : '<tr><td colspan="8" class="empty">No spending matches the filters.</td></tr>');
     }
 
     function renderRecurring(rows, range) {
@@ -533,7 +628,7 @@
       }).filter(Boolean).sort((a,b)=>Number(b.fixed)-Number(a.fixed)||b.perMonth-a.perMonth);
       const fixedTotal=items.filter(item=>item.fixed).reduce((t,item)=>t+item.perMonth,0);
       byId('recurringSummary').textContent=items.length ? `${items.length} merchants charged in three or more months · fixed commitments about ${currency.format(fixedTotal)} a month` : 'Merchants charged in three or more months of the selected range';
-      byId('recurringBody').innerHTML=items.slice(0,25).map(item=>`<tr><td>${esc(item.merchant)}</td><td>${esc(item.category)}</td><td><span class="badge ${item.fixed?'ok':''}">${item.fixed?'Fixed amount':'Variable'}</span></td><td class="num">${integer.format(item.months)} / ${integer.format(months)}</td>${moneyCell(item.median)}${moneyCell(item.perMonth)}${moneyCell(item.perMonth*12)}<td>${esc(fmtDay(item.last))}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">No recurring payments in the selected range.</td></tr>';
+      byId('recurringBody').innerHTML=items.slice(0,25).map(item=>`<tr class="drill" data-drill="merchant|${esc(item.merchant)}" data-month=""><td><button type="button" class="link">${esc(item.merchant)}</button></td><td>${esc(item.category)}</td><td><span class="badge ${item.fixed?'ok':''}">${item.fixed?'Fixed amount':'Variable'}</span></td><td class="num">${integer.format(item.months)} / ${integer.format(months)}</td>${moneyCell(item.median)}${moneyCell(item.perMonth)}${moneyCell(item.perMonth*12)}<td>${esc(fmtDay(item.last))}</td></tr>`).join('') || '<tr><td colspan="8" class="empty">No recurring payments in the selected range.</td></tr>';
     }
 
     function renderTransfers(rows) {
@@ -603,7 +698,7 @@
     }
 
     function sortedTransactions(rows) {
-      const numeric=['debit','credit','confidence','source_page'].includes(sortColumn);
+      const numeric=['debit','credit','amount','confidence','source_page'].includes(sortColumn);
       return [...rows].sort((a,b)=>{
         const left=a[sortColumn], right=b[sortColumn];
         const blankAmount=['debit','credit'].includes(sortColumn);
@@ -624,9 +719,9 @@
         header.setAttribute('aria-sort',active?(sortDirection==='asc'?'ascending':'descending'):'none');
         header.querySelector('.sort-indicator').textContent=active?(sortDirection==='asc'?'▲':'▼'):'';
       });
-      byId('transactionSummary').textContent=`${integer.format(sorted.length)} matching transactions · debits ${currency.format(sum(sorted,'debit'))} · credits ${currency.format(sum(sorted,'credit'))}`; byId('pageLabel').textContent=`Page ${page} of ${pages}`; byId('prevPage').disabled=page<=1; byId('nextPage').disabled=page>=pages;
+      byId('transactionSummary').textContent=`${integer.format(sorted.length)} matching transactions · debits ${currency.format(sum(sorted,'debit'))} · credits ${currency.format(sum(sorted,'credit'))}`; byId('pageLabel').textContent=byId('pageLabel2').textContent=`Page ${page} of ${pages}`; byId('prevPage').disabled=byId('prevPage2').disabled=page<=1; byId('nextPage').disabled=byId('nextPage2').disabled=page>=pages;
       const optionsFor=row=>categoryOptions.map(value=>`<option value="${esc(value)}" ${value===row.category?'selected':''}>${esc(value)}</option>`).join('');
-      byId('transactionBody').innerHTML=slice.map(row=>`<tr title="${esc(row.raw_description)}"><td>${esc(row.date)}</td><td>${esc(row.account)}</td><td>${esc(row.merchant)}</td><td><span class="badge">${esc(row.kind.replaceAll('_',' '))}</span></td><td><select class="transaction-category" data-transaction-id="${esc(row.transaction_id)}" aria-label="Category for ${esc(row.merchant)}" ${savingCategory?'disabled':''}>${optionsFor(row)}</select></td><td>${esc(row.subcategory)}</td><td class="num">${Number(row.debit)?currency.format(row.debit):''}</td><td class="num">${Number(row.credit)?currency.format(row.credit):''}</td><td><span class="badge ${row.review_status==='review'?'review':''}">${Math.round(Number(row.confidence)*100)}% ${esc(row.review_status)}</span></td><td>p.${esc(row.source_page)}</td></tr>`).join('') || '<tr><td colspan="10" class="empty">No transactions match the filters.</td></tr>';
+      byId('transactionBody').innerHTML=slice.map(row=>`<tr title="${esc(row.raw_description)}"><td class="c-date">${esc(row.date)}</td><td class="c-account">${esc(row.account)}</td><td class="c-merchant">${esc(row.merchant)}</td><td class="c-kind"><span class="badge">${esc(row.kind.replaceAll('_',' '))}</span></td><td class="c-category"><select class="transaction-category" data-transaction-id="${esc(row.transaction_id)}" aria-label="Category for ${esc(row.merchant)}" ${savingCategory?'disabled':''}>${optionsFor(row)}</select></td><td class="c-sub">${esc(row.subcategory)}</td><td class="num c-debit">${Number(row.debit)?currency.format(row.debit):''}</td><td class="num c-credit">${Number(row.credit)?currency.format(row.credit):''}</td><td class="c-conf"><span class="badge ${row.review_status==='review'?'review':''}">${Math.round(Number(row.confidence)*100)}% ${esc(row.review_status)}</span></td><td class="c-src">p.${esc(row.source_page)}</td></tr>`).join('') || '<tr><td colspan="10" class="empty">No transactions match the filters.</td></tr>';
       document.querySelectorAll('.transaction-category').forEach(select=>select.addEventListener('change',()=>{
         const row=transactions.find(item=>String(item.transaction_id)===select.dataset.transactionId); if (!row) return;
         void saveCategoryChange(row, select.value);
@@ -654,11 +749,96 @@
       downloadCsv(`income_statement${rangeSuffix()}.csv`, out);
     }
 
+    // ---- Tap-to-drill details sheet ----
+    let currentRows=[], sheetFilter=null, sheetOpen=false, sheetOpenedAt=0;
+    const monthBounds = month => { const start=`${month}-01`, d=parseDate(start); return {start, end:localDate(new Date(d.getFullYear(), d.getMonth()+1, 0))}; };
+    const clampRange = r => { const range=currentRange(); return {start: range.start && range.start>r.start ? range.start : r.start, end: range.end && range.end<r.end ? range.end : r.end}; };
+    const sumBy = (rows, fn) => rows.reduce((t,row)=>t+fn(row),0);
+    const amountFor = mode => mode==='spend' ? spendValue : mode==='income' ? incomeValue : row=>Number(row.signed_amount||0);
+
+    function openSheet({title, subtitle='', rows, mode='all', filter={}, extraStat=null, stats=null, breakdownMode=null}) {
+      const value=amountFor(mode), total=sumBy(rows,value), counted=rows.filter(row=>Math.abs(value(row))>0.004 || mode==='all');
+      byId('sheetTitle').textContent=title; byId('sheetSubtitle').textContent=subtitle;
+      stats=stats || [[mode==='spend'?'Spent':mode==='income'?'Received':'Net',currency.format(total)],['Transactions',integer.format(counted.length)],extraStat || ['Average',counted.length?currency.format(total/counted.length):'–']];
+      byId('sheetStats').innerHTML=stats.map(([label,v])=>`<div><span>${esc(label)}</span><strong>${esc(v)}</strong></div>`).join('');
+      let html='';
+      const breakdownValue=breakdownMode ? amountFor(breakdownMode) : value, breakdownRows=breakdownMode==='spend' ? spendRows(rows) : rows;
+      const categories=Object.entries(groupSum(breakdownRows,row=>row.category||'Uncategorised',breakdownValue)).filter(x=>Math.abs(x[1])>0.004).sort((a,b)=>b[1]-a[1]);
+      if (categories.length>1 && !filter.category) {
+        const max=Math.max(...categories.map(x=>Math.abs(x[1])));
+        html+=`<div class="sheet-section-title">${breakdownMode==='spend'?'Spending by category':'By category'}</div>`+categories.slice(0,8).map(([category,v])=>`<button type="button" class="breakdown-row" data-category="${esc(category)}"><span><span class="swatch" style="background:${categoryColor(category)}"></span>${esc(category)}</span><strong>${currency.format(v)}</strong><span class="bar"><i style="width:${Math.max(2,Math.abs(v)/max*100).toFixed(1)}%"></i></span></button>`).join('');
+      }
+      const list=[...counted].sort((a,b)=>b.date.localeCompare(a.date)||Math.abs(value(b))-Math.abs(value(a)));
+      html+=`<div class="sheet-section-title">Transactions</div><ul class="tx-list">${list.slice(0,150).map(row=>{ const v=mode==='all'?Number(row.signed_amount||0):value(row), isIn=mode==='income'||(mode==='all'&&v>0)||(mode==='spend'&&v<0); return `<li><span class="m">${esc(row.merchant||row.raw_description)}</span><span class="a ${isIn?'in':''}">${isIn?'+':''}${currency.format(Math.abs(v))}</span><span class="d">${esc(fmtDay(row.date))}${row.account?` · ${esc(row.account)}`:''} · ${esc(row.category)}</span></li>`; }).join('')}</ul>${list.length>150?`<p class="tx-more">Showing the latest 150 of ${integer.format(list.length)}. Open in Transactions to see them all.</p>`:''}${list.length?'':'<p class="tx-more">No transactions.</p>'}`;
+      byId('sheetBody').innerHTML=html; byId('sheetBody').scrollTop=0;
+      byId('sheetBody').querySelectorAll('.breakdown-row').forEach(button=>button.addEventListener('click',()=>openSheet({title:button.dataset.category, subtitle, rows:breakdownRows.filter(row=>(row.category||'Uncategorised')===button.dataset.category), mode:breakdownMode||mode, filter:Object.assign({}, filter, {category:button.dataset.category})})));
+      sheetFilter=filter;
+      byId('sheet').classList.add('open'); byId('sheet').setAttribute('aria-hidden','false'); byId('sheetBackdrop').classList.add('open'); document.body.classList.add('sheet-open');
+      if (!sheetOpen && history.pushState) history.pushState({sheet:true}, '');
+      sheetOpen=true; sheetOpenedAt=Date.now(); byId('sheetClose').focus({preventScroll:true});
+    }
+    function closeSheet(fromHistory=false) {
+      if (!sheetOpen) return;
+      sheetOpen=false;
+      byId('sheet').classList.remove('open'); byId('sheet').setAttribute('aria-hidden','true'); byId('sheetBackdrop').classList.remove('open'); document.body.classList.remove('sheet-open');
+      if (!fromHistory && history.state?.sheet) history.back();
+    }
+    function applyFilter(filter) {
+      if (filter.start || filter.end) { byId('timeframePreset').value=''; if (filter.start) byId('startDate').value=filter.start; if (filter.end) byId('endDate').value=filter.end; }
+      if (filter.category!==undefined) byId('categoryFilter').value=filter.category;
+      if (filter.account!==undefined) byId('accountFilter').value=filter.account;
+      if (filter.search!==undefined) byId('searchFilter').value=filter.search;
+      page=1; render();
+    }
+    function drillFromTable(drill, month) {
+      const [kind, ...rest]=drill.split('|'), label=rest.join('|');
+      const span=month ? clampRange(monthBounds(month)) : null, inMonth=row=>!month || row.month===month;
+      const when=month ? fmtMonth(month) : 'Selected period';
+      if (kind==='spend') openSheet({title:label||'All spending', subtitle:when, rows:spendRows(currentRows).filter(row=>inMonth(row) && (!label || row.category===label)), mode:'spend', filter:Object.assign({}, span||{}, label?{category:label}:{})});
+      else if (kind==='income') openSheet({title:label||'All income', subtitle:when, rows:currentRows.filter(row=>row.flow==='income' && inMonth(row) && (!label || incomeLabel(row)===label)), mode:'income', filter:span||{}});
+      else if (kind==='net') { const rows=currentRows.filter(row=>inMonth(row) && row.flow!=='transfer'); openSheet({title:'Net savings', subtitle:when, rows, mode:'all', filter:span||{}, extraStat:['Spent',currency.format(sumBy(rows,spendValue))]}); }
+      else if (kind==='month') {
+        const rows=currentRows.filter(row=>inMonth(row) && row.flow!=='transfer'), moneyIn=sumBy(rows,incomeValue), moneyOut=sumBy(rows,spendValue);
+        openSheet({title:when, subtitle:'Money in and money out', rows, mode:'all', filter:span||{}, breakdownMode:'spend', stats:[['Money in',currency.format(moneyIn)],['Money out',currency.format(moneyOut)],['Net savings',currency.format(moneyIn-moneyOut)]]});
+      }
+      else if (kind==='merchant') openSheet({title:label, subtitle:'Recurring payment · selected period', rows:currentRows.filter(row=>row.flow==='expense' && row.merchant===label), mode:'spend', filter:{search:label}});
+    }
+    function bindChartTaps() {
+      const bind=(id, handler) => { const gd=byId(id); if (gd && !gd.dataset.tapBound && gd.on) { gd.dataset.tapBound='1'; gd.on('plotly_click', event => { const point=event?.points?.[0]; if (point) handler(point); }); } };
+      // A tap anywhere on a month opens that month's summary; no need to hit a thin bar exactly.
+      bind('cashflowChart', point => drillFromTable('month|', point.customdata));
+      bind('categoryChart', point => drillFromTable(`spend|${point.y}`, ''));
+      bind('categoryTrendChart', point => {
+        const month=point.customdata, group=point.data.name, span=clampRange(monthBounds(month));
+        const rows=spendRows(currentRows).filter(row=>row.month===month && (group==='Other' ? !topCategories.includes(row.category) : row.category===group));
+        openSheet({title:group==='Other'?'Other categories':group, subtitle:fmtMonth(month), rows, mode:'spend', filter:group==='Other'?span:Object.assign({}, span, {category:group})});
+      });
+      bind('merchantChart', point => openSheet({title:point.y, subtitle:'Selected period', rows:spendRows(currentRows).filter(row=>row.merchant===point.y), mode:'spend', filter:{search:point.y}}));
+      bind('balanceChart', point => {
+        const day=point.customdata, account=point.data.name, accountsShown=account==='Total' ? null : account;
+        const rows=transactions.filter(row=>row.date===day && (!accountsShown || row.account===accountsShown) && (!byId('accountFilter').value || row.account===byId('accountFilter').value));
+        openSheet({title:`${account} balance`, subtitle:fmtDay(day), rows, mode:'all', filter:Object.assign({start:day, end:day}, accountsShown?{account:accountsShown}:{}), extraStat:['Balance', currency.format(Number(point.y))]});
+      });
+    }
+    function renderChips() {
+      const chips=[];
+      if (byId('accountFilter').value) chips.push(['accountFilter', `Account: ${byId('accountFilter').value}`]);
+      if (byId('categoryFilter').value) chips.push(['categoryFilter', byId('categoryFilter').value]);
+      if (byId('kindFilter').value) chips.push(['kindFilter', byId('kindFilter').value.replaceAll('_',' ')]);
+      if (byId('searchFilter').value.trim()) chips.push(['searchFilter', `“${byId('searchFilter').value.trim()}”`]);
+      if (reviewOnly) chips.push(['reviewOnly', 'Review queue']);
+      byId('activeChips').innerHTML=chips.map(([id,label])=>`<button type="button" class="chip" data-clear="${id}" aria-label="Remove filter ${esc(label)}">${esc(label)}</button>`).join('');
+      byId('activeChips').querySelectorAll('.chip').forEach(chip=>chip.addEventListener('click',()=>{ if (chip.dataset.clear==='reviewOnly') reviewOnly=false; else byId(chip.dataset.clear).value=''; page=1; render(); }));
+      const range=currentRange();
+      byId('filtersSummary').textContent=`${range.start&&range.end?`${fmtDay(range.start)} – ${fmtDay(range.end)}`:'All dates'}${chips.length?` · ${chips.length} more`:''}`;
+    }
+
     function render() {
       const range=currentRange(), prior=priorRange(range), rows=filteredRows(range), priorRows=prior ? filteredRows(prior) : null;
+      currentRows=rows; renderChips();
       renderKpis(rows, priorRows, range, prior); renderCharts(rows, range); renderIncomeStatement(rows, range); renderCategoryTable(rows, priorRows, range); renderRecurring(rows, range); renderTransfers(rows); renderAccounts(range); renderQuality(rows); renderTransactions(rows);
-      document.querySelectorAll('.category-link').forEach(button=>button.addEventListener('click',()=>{ byId('categoryFilter').value=button.dataset.category; page=1; render(); byId('transactionSection').scrollIntoView({behavior:'smooth'}); }));
-      byId('reviewQueueToggle').textContent=reviewOnly?'Show all transactions':'Show review queue'; byId('reviewQueueToggle').setAttribute('aria-pressed',String(reviewOnly)); byId('reviewKpiButton').setAttribute('aria-pressed',String(reviewOnly)); byId('reviewKpiHint').textContent=reviewOnly?'Review queue active · click to clear':'Click to open the review queue';
+      document.querySelectorAll('#income-statement [data-drill], #categoryBody [data-drill], #recurringBody [data-drill]').forEach(element=>element.addEventListener('click',()=>drillFromTable(element.dataset.drill, element.dataset.month)));
+      byId('reviewQueueToggle').textContent=reviewOnly?'Show all transactions':'Show review queue'; byId('reviewQueueToggle').setAttribute('aria-pressed',String(reviewOnly)); byId('reviewKpiButton').setAttribute('aria-pressed',String(reviewOnly)); byId('reviewKpiHint').textContent=reviewOnly?'Review queue on · tap to clear':'Open the review queue';
     }
     ['startDate','endDate'].forEach(id=>byId(id).addEventListener('change',()=>{byId('timeframePreset').value='';page=1;render();}));
     byId('timeframePreset').addEventListener('change',()=>applyTimeframePreset(byId('timeframePreset').value));
@@ -672,6 +852,18 @@
     byId('reviewKpiButton').addEventListener('click',()=>{reviewOnly=!reviewOnly;page=1;render();byId('transactionSection').scrollIntoView({behavior:'smooth'});}); byId('reviewQueueToggle').addEventListener('click',()=>{reviewOnly=!reviewOnly;page=1;render();});
     byId('resetFilters').addEventListener('click',()=>{ byId('accountFilter').value=''; byId('categoryFilter').value=''; byId('kindFilter').value=''; byId('searchFilter').value=''; byId('timeframePreset').value=''; byId('applyMerchantRule').checked=false; byId('applyFutureRule').checked=false; reviewOnly=false; byId('startDate').value=firstDate; byId('endDate').value=lastDate; page=1; render(); });
     byId('prevPage').addEventListener('click',()=>{if(page>1){page--;renderTransactions(filteredRows());}}); byId('nextPage').addEventListener('click',()=>{page++;renderTransactions(filteredRows());});
+    byId('prevPage2').addEventListener('click',()=>{if(page>1){page--;renderTransactions(filteredRows());byId('transactionSection').scrollIntoView();}}); byId('nextPage2').addEventListener('click',()=>{page++;renderTransactions(filteredRows());byId('transactionSection').scrollIntoView();});
+    byId('incomeKpiButton').addEventListener('click',()=>drillFromTable('income|',''));
+    byId('spendKpiButton').addEventListener('click',()=>drillFromTable('spend|',''));
+    byId('sheetClose').addEventListener('click',()=>closeSheet()); // A tap on a chart is followed by a synthetic click on whatever is now under the finger; ignore it.
+    byId('sheetBackdrop').addEventListener('click',()=>{ if (Date.now()-sheetOpenedAt>450) closeSheet(); });
+    document.addEventListener('keydown',event=>{ if (event.key==='Escape') closeSheet(); });
+    window.addEventListener('popstate',()=>closeSheet(true));
+    byId('sheetFilter').addEventListener('click',()=>{ const filter=sheetFilter; closeSheet(); applyFilter(filter); });
+    byId('sheetTransactions').addEventListener('click',()=>{ const filter=sheetFilter; closeSheet(); applyFilter(filter); setTimeout(()=>byId('transactionSection').scrollIntoView({behavior:'smooth'}), 60); });
+    byId('filtersToggle').addEventListener('click',()=>{ const open=byId('filterPanel').classList.toggle('open'); byId('filtersToggle').setAttribute('aria-expanded',String(open)); byId('filtersToggle').firstElementChild.textContent=open?'Filters ▴':'Filters ▾'; });
+    byId('mobileSort').addEventListener('change',()=>{ [sortColumn, sortDirection]=byId('mobileSort').value.split(':'); page=1; renderTransactions(filteredRows()); });
+    narrowQuery.addEventListener?.('change',()=>render());
     byId('exportTransactions').addEventListener('click',exportTransactions); byId('exportStatement').addEventListener('click',exportStatement); byId('printReport').addEventListener('click',()=>window.print());
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>render());
     const sectionLinks=[...document.querySelectorAll('.tabs a')];

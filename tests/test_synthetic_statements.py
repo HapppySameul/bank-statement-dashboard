@@ -242,6 +242,9 @@ def test_dashboard_labels_each_statement_and_transaction_with_its_account(tmp_pa
     dashboard = output.read_text(encoding="utf-8")
     for heading in ("Income statement", "Statement register", "Recurring payments", "Account balance", "Transaction drill-down"):
         assert heading in dashboard
+    # Charts are tapped for details rather than zoomed.
+    assert "layout.dragmode=false" in dashboard and "scrollZoom:false" in dashboard
+    assert 'id="sheet"' in dashboard and "plotly_click" in dashboard
     assert "HSBC and ING" in dashboard
     # Every template placeholder was filled in.
     assert not re.search(r"__[A-Z_]+__", dashboard.split("<script>", 2)[0])
