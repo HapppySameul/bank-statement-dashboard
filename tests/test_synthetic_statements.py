@@ -24,7 +24,7 @@ from statement_fixtures import (
 )
 
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture
@@ -201,7 +201,7 @@ def test_unreconciled_statement_stops_the_import_without_touching_the_ledger(tmp
 def test_cloudflare_headers_file_matches_dashboard_security_headers():
     lines = [
         line.strip()
-        for line in (ROOT / "_headers").read_text(encoding="utf-8").splitlines()
+        for line in (ROOT / "deploy" / "_headers").read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.lstrip().startswith("#")
     ]
     assert lines[0] == "/*"
@@ -213,17 +213,18 @@ def test_cloudflare_only_publishes_the_dashboard():
     config = json.loads(
         "\n".join(
             line
-            for line in (ROOT / "wrangler.jsonc").read_text(encoding="utf-8").splitlines()
+            for line in (ROOT / "deploy" / "wrangler.jsonc").read_text(encoding="utf-8").splitlines()
             if not line.lstrip().startswith("//")
         )
     )
     assert config["assets"] == {"directory": "./site"}
-    deploy = (ROOT / "deploy_dashboard.sh").read_text(encoding="utf-8")
-    assert "rm -rf site" in deploy
-    assert "cp index.html _headers site/" in deploy
+    launcher = (ROOT / "Dashboard.command").read_text(encoding="utf-8")
+    assert "rm -rf deploy/site" in launcher
+    assert 'cp "$DATA/index.html" deploy/_headers deploy/site/' in launcher
+    assert "--config deploy/wrangler.jsonc" in launcher
     ignored = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
-    assert "index.html" in ignored
-    assert "site/" in ignored
+    for private in ("data/", "index.html", "site/"):
+        assert private in ignored
 
 
 def test_dashboard_labels_each_statement_and_transaction_with_its_account(tmp_path, hsbc, ing):

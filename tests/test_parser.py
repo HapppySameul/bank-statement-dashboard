@@ -20,7 +20,7 @@ from bank_statement_dashboard import (
 )
 
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parents[1]
 
 
 
@@ -59,7 +59,7 @@ def test_password_protected_statement_is_read_without_an_unlocked_copy(tmp_path)
     )
     document.close()
 
-    config = load_known_categories(ROOT / "merchant_categories.json")
+    config = load_known_categories(tmp_path / "merchant_categories.json")
     records, summaries = parse_statement_pdf_with_summary(encrypted_pdf, config)
 
     assert records == []
@@ -104,7 +104,7 @@ def test_zero_activity_hsbc_statement_does_not_create_fake_transactions(tmp_path
     document.save(statement)
     document.close()
 
-    config = load_known_categories(ROOT / "merchant_categories.json")
+    config = load_known_categories(tmp_path / "merchant_categories.json")
     records, summaries = parse_statement_pdf_with_summary(statement, config)
 
     assert records == []

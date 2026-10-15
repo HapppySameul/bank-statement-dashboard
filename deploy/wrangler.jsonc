@@ -1,0 +1,12 @@
+// Cloudflare Worker that serves the generated dashboard as static assets.
+// `Dashboard.command publish` uploads it from this machine; nothing is built
+// from git. It uploads only deploy/site/, which the launcher refills with
+// data/index.html and _headers on every run, so statements are never published.
+{
+  "name": "bankstatement",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./site"
+  }
+}

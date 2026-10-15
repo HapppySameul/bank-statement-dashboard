@@ -2,23 +2,27 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
-statement_password.txt
-merchant_categories.json
 
-# Raw and derived personal financial data
+# Your statements, ledger, category rules, statement password and the generated
+# dashboard (which embeds every transaction) all live in data/. Never commit it.
+data/
+
+# The same files anywhere else in the folder, from older layouts.
 *.pdf
 bank_transactions.csv
 statement_reconciliation.json
 statement_import_log.json
+merchant_categories.json
+statement_password.txt
+index.html
 *.tmp
 *.bak
 
-# Generated dashboard: embeds every transaction. Deployed to Cloudflare
-# straight from this machine with deploy_dashboard.sh, never through git.
-index.html
+# Cloudflare publishing: site/ is refilled from data/index.html on every publish.
 site/
+.wrangler/
+.dev.vars
 
 # Local tooling
 .DS_Store
-.wrangler/
-.dev.vars
+.vscode/
