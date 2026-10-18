@@ -3,6 +3,8 @@ rem Bank statement dashboard for Windows: import new statements from data\ and
 rem rebuild data\index.html. Statements and the ledger in data\ are git-ignored.
 setlocal
 cd /d "%~dp0"
+rem The Mac copy is the main one: just bring in the latest code from GitHub.
+where git >nul 2>nul && git pull --ff-only || echo Code sync skipped; continuing with this copy.
 if not exist data mkdir data
 set "DASHBOARD_PYTHON=python"
 if exist ".venv\Scripts\python.exe" set "DASHBOARD_PYTHON=.venv\Scripts\python.exe"

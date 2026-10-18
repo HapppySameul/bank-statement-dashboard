@@ -6,6 +6,10 @@
 #   ./Dashboard.command build     import new statements and rebuild the dashboard only
 #   ./Dashboard.command publish   publish the current dashboard to Cloudflare
 #   ./Dashboard.command edit      open the dashboard with editable categories
+#   ./Dashboard.command sync      only sync the code with GitHub
+#
+# Every run first syncs the code with GitHub (see sync below), so this Mac
+# always has the latest version.
 #
 # Statements, the ledger and the generated dashboard live in data/, which is
 # git-ignored.
@@ -19,6 +23,74 @@ PYTHON=python3
 if [ -x "$ROOT/.venv/bin/python" ]; then
     PYTHON="$ROOT/.venv/bin/python"
 fi
+
+# Keep this Mac's copy of the code in step with GitHub before every run: offer
+# to commit and push local code changes, then bring in anything new from GitHub.
+# data/ is git-ignored, so statements, the ledger and the dashboard never leave
+# this machine. Any problem only prints a warning; the dashboard still runs.
+sync() {
+    if ! command -v git >/dev/null 2>&1 || ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        return 0
+    fi
+    if ! git rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+        echo "Code sync skipped: this branch does not track a GitHub branch."
+        echo
+        return 0
+    fi
+    echo "Syncing the code with GitHub..."
+
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "Local code changes:"
+        git status --short
+        printf "Commit and push them to GitHub? [Y/n]: "
+        read -r ANSWER
+        case "${ANSWER:-y}" in
+            [Yy]*)
+                printf "Describe the change [Update from Mac]: "
+                read -r MESSAGE
+                git add -A
+                # Belt and braces for a public repo: nothing private may be committed.
+                if git diff --cached --name-only | grep -Eq '^data/|\.pdf$|(^|/)index\.html$|\.csv$|statement_password'; then
+                    git reset -q
+                    echo "Stopped: a private file was about to be committed. Nothing was committed." >&2
+                else
+                    git commit -q -m "${MESSAGE:-Update from Mac}" && echo "Committed."
+                fi
+                ;;
+            *) echo "Left uncommitted." ;;
+        esac
+    fi
+
+    if ! git fetch -q 2>/dev/null; then
+        echo "Could not reach GitHub, so the code was not synced. Continuing with this copy."
+        echo
+        return 0
+    fi
+    BEHIND=$(git rev-list --count 'HEAD..@{u}')
+    AHEAD=$(git rev-list --count '@{u}..HEAD')
+    if [ "$BEHIND" -gt 0 ]; then
+        if [ -n "$(git status --porcelain)" ]; then
+            echo "GitHub has $BEHIND new commit(s), but they were not pulled because of the uncommitted changes above."
+        elif git merge -q --ff-only '@{u}' 2>/dev/null || git merge -q --no-edit '@{u}' 2>/dev/null; then
+            echo "Pulled $BEHIND new commit(s) from GitHub."
+        else
+            git merge --abort 2>/dev/null
+            echo "GitHub's changes conflict with this copy, so nothing was pulled. Ask for help merging them." >&2
+        fi
+        AHEAD=$(git rev-list --count '@{u}..HEAD')
+    fi
+    if [ "$AHEAD" -gt 0 ]; then
+        if git push -q 2>/dev/null; then
+            echo "Pushed $AHEAD commit(s) to GitHub."
+        else
+            echo "Could not push to GitHub; the commits stay on this Mac and will be pushed next time." >&2
+        fi
+    fi
+    if [ "$BEHIND" -eq 0 ] && [ "$AHEAD" -eq 0 ]; then
+        echo "Code is already up to date with GitHub."
+    fi
+    echo
+}
 
 build() {
     mkdir -p "$DATA"
@@ -115,6 +187,7 @@ update() {
 
 COMMAND="${1:-}"
 PAUSE=0
+sync
 if [ -z "$COMMAND" ]; then
     # Started by double-clicking: offer a menu and keep the window open at the end.
     PAUSE=1
@@ -136,9 +209,10 @@ fi
 
 case "$COMMAND" in
     update|build|publish|edit) "$COMMAND"; STATUS=$? ;;
+    sync) STATUS=0 ;;
     none) STATUS=2 ;;
     *)
-        echo "Usage: $0 [update|build|publish|edit]" >&2
+        echo "Usage: $0 [update|build|publish|edit|sync]" >&2
         STATUS=2
         ;;
 esac

@@ -47,6 +47,8 @@ On macOS, double-click `Dashboard.command` in Finder and pick an option:
 
 Keep the Terminal window open while editing categories; changes are saved automatically to `data/bank_transactions.csv` and `data/merchant_categories.json`. Opening `data/index.html` directly in Finder uses the browser's `file://` mode, which cannot write changes back.
 
+Every run first syncs the code with GitHub, so this Mac always has the latest version. If you changed any code locally, the launcher lists the changes and offers to commit and push them; it then pulls anything new from GitHub (for example changes merged from a pull request) and pushes local commits. `data/` is git-ignored and never synced, and the launcher refuses to commit PDFs, CSVs or `index.html` even if they appear elsewhere. If GitHub cannot be reached, it says so and carries on with the local copy.
+
 From a terminal (macOS or Linux), run the same steps by name:
 
 ```sh
@@ -54,9 +56,10 @@ From a terminal (macOS or Linux), run the same steps by name:
 ./Dashboard.command build     # import and rebuild data/index.html only
 ./Dashboard.command publish
 ./Dashboard.command edit
+./Dashboard.command sync      # only sync the code with GitHub
 ```
 
-On Windows, double-click `Dashboard.bat`. It imports new statements and rebuilds `data\index.html`; open that file in a browser to view it.
+On Windows, double-click `Dashboard.bat`. It pulls the latest code from GitHub first (it never commits or pushes). It imports new statements and rebuilds `data\index.html`; open that file in a browser to view it.
 
 Each import updates:
 
