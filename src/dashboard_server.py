@@ -3,13 +3,48 @@
 
 import argparse
 import json
+import subprocess
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from threading import Lock
+from threading import Lock, Timer
+from typing import List, Optional
 from urllib.parse import urlsplit
 
 from bank_statement_dashboard import DASHBOARD_SECURITY_HEADERS, update_transaction_category
+
+
+class DelayedPublisher:
+    """Publish the dashboard once category edits have stopped for a while.
+
+    Each edit restarts the countdown, so a burst of edits leads to one upload.
+    """
+
+    def __init__(self, command: List[str], delay_seconds: float) -> None:
+        self.command = command
+        self.delay_seconds = delay_seconds
+        self._timer: Optional[Timer] = None
+        self._timer_lock = Lock()
+        self._run_lock = Lock()
+
+    def schedule(self) -> None:
+        with self._timer_lock:
+            if self._timer is not None:
+                self._timer.cancel()
+            self._timer = Timer(self.delay_seconds, self.run)
+            self._timer.daemon = True
+            self._timer.start()
+
+    def run(self) -> None:
+        with self._run_lock:
+            print("Publishing the edited dashboard...")
+            try:
+                completed = subprocess.run(self.command, check=False)
+            except OSError as exc:
+                print(f"Publishing failed: {exc}")
+                return
+            if completed.returncode != 0:
+                print(f"Publishing failed (exit code {completed.returncode}); it will be retried after the next edit.")
 
 
 class DashboardRequestHandler(SimpleHTTPRequestHandler):
@@ -17,6 +52,7 @@ class DashboardRequestHandler(SimpleHTTPRequestHandler):
     categories_path: Path
     reconciliation_path: Path
     output_path: Path
+    publisher: Optional[DelayedPublisher] = None
     update_lock = Lock()
 
     def log_message(self, format_string: str, *args: object) -> None:
@@ -127,10 +163,12 @@ class DashboardRequestHandler(SimpleHTTPRequestHandler):
             self._send_json(500, {"ok": False, "error": "The category could not be saved; see the Terminal window"})
             return
 
+        if self.publisher is not None:
+            self.publisher.schedule()
         self._send_json(200, {"ok": True, **result})
 
 
-def make_server(root: Path, port: int) -> ThreadingHTTPServer:
+def make_server(root: Path, port: int, publisher: Optional[DelayedPublisher] = None) -> ThreadingHTTPServer:
     handler_class = type(
         "ConfiguredDashboardRequestHandler",
         (DashboardRequestHandler,),
@@ -139,6 +177,7 @@ def make_server(root: Path, port: int) -> ThreadingHTTPServer:
             "categories_path": root / "merchant_categories.json",
             "reconciliation_path": root / "statement_reconciliation.json",
             "output_path": root / "index.html",
+            "publisher": publisher,
         },
     )
     handler = partial(handler_class, directory=str(root))
@@ -149,11 +188,27 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Serve and edit the local bank statement dashboard")
     parser.add_argument("--directory", default=".", help="Dashboard folder")
     parser.add_argument("--port", type=int, default=8765, help="Local HTTP port")
+    parser.add_argument(
+        "--publish-command",
+        help="Launcher to run as '<launcher> publish-if-changed' after category edits",
+    )
+    parser.add_argument(
+        "--publish-after-edits",
+        type=float,
+        default=0,
+        help="Seconds after the last category edit before publishing (0 turns it off)",
+    )
     args = parser.parse_args()
 
-    server = make_server(Path(args.directory).resolve(), args.port)
+    publisher = None
+    if args.publish_command and args.publish_after_edits > 0:
+        publisher = DelayedPublisher(["/bin/sh", args.publish_command, "publish-if-changed"], args.publish_after_edits)
+
+    server = make_server(Path(args.directory).resolve(), args.port, publisher)
     print(f"Dashboard available at http://127.0.0.1:{args.port}/index.html")
     print("Category edits are saved to bank_transactions.csv and merchant_categories.json.")
+    if publisher is not None:
+        print(f"Edits are published online {args.publish_after_edits:g} seconds after the last change.")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
