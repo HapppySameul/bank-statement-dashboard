@@ -401,7 +401,8 @@ def net_worth_for_dashboard(
         except (OSError, ValueError, KeyError) as error:
             problems.append(f"Investment holdings not loaded from {investment_dir}: {error}")
     symbols = sorted({p["symbol"] for p in (holdings or {}).get("positions", [])})
-    currencies = {p["currency"] for p in (holdings or {}).get("positions", [])}
+    # CNY is always fetched: the page's AUD/CNY switch converts at this rate.
+    currencies = {p["currency"] for p in (holdings or {}).get("positions", [])} | {"CNY"}
     symbols += [FX_SYMBOLS[c] for c in sorted(currencies) if c in FX_SYMBOLS]
-    prices, price_problems = load_prices(symbols, cache_path, fetch) if symbols else ({}, [])
+    prices, price_problems = load_prices(symbols, cache_path, fetch)
     return build_net_worth(holdings, prices, bank_balances(transactions, statements), today, problems + price_problems, saver_account)

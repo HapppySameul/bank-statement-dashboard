@@ -100,6 +100,10 @@
     .pill-select { width:auto; height:46px; border-radius:14px; border-color:var(--line); padding:0 34px 0 14px; font-weight:500; }
     .icon-button { display:inline-flex; align-items:center; gap:8px; height:46px; padding:0 16px; border-radius:14px; background:var(--panel); color:var(--ink); border:1px solid var(--line); font-weight:500; }
     .icon-button:hover { background:var(--panel-alt); }
+    .currency-switch { display:inline-flex; height:46px; padding:4px; gap:2px; border-radius:14px; background:var(--panel); border:1px solid var(--line); }
+    .currency-switch button { padding:0 12px; border-radius:10px; background:transparent; color:var(--ink-2); font-weight:600; }
+    .currency-switch button[aria-pressed="true"] { background:var(--ink); color:var(--panel); }
+    .currency-switch[hidden] { display:none; }
     .icon-button .count { display:inline-grid; place-items:center; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:var(--ink); color:var(--panel); font-size:.72rem; font-weight:700; }
     .icon-button .count:empty { display:none; }
     .status { display:inline-flex; align-items:center; gap:7px; height:46px; border-radius:14px; padding:0 14px; font-size:.84rem; font-weight:600; white-space:nowrap; background:var(--panel); border:1px solid var(--line); }
@@ -345,7 +349,9 @@
       .search { flex:1 1 100%; max-width:none; order:2; }
       .topbar-actions { margin-left:0; width:100%; order:1; }
       .topbar-actions .pill-select { flex:1; min-width:0; }
-      .search input, .pill-select, .icon-button, .status { height:44px; font-size:16px; }
+      .search input, .pill-select, .icon-button, .status, .currency-switch { height:44px; font-size:16px; }
+      .currency-switch button { padding:0 9px; font-size:.85rem; }
+      #filtersToggle { padding:0 12px; } #filtersToggle > span:not(.count) { display:none; }
       .status { font-size:.8rem; padding:0 10px; }
       .status-text { display:none; }
       .page-head { margin-bottom:14px; } h1 { font-size:1.3rem; }
@@ -438,7 +444,8 @@
         <label class="search" for="searchFilter"><span hidden>Merchant or description</span><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="searchFilter" type="search" placeholder="Quick search merchants" autocomplete="off"></label>
         <div class="topbar-actions">
           <select id="timeframePreset" class="pill-select" aria-label="Timeframe"><option value="">All dates</option><option value="this">This month</option><option value="1">Last month</option><option value="2">Last 2 months</option><option value="3">Last 3 months</option><option value="6">Last 6 months</option><option value="12">Last 12 months</option><option value="ytd">Year to date</option></select>
-          <button id="filtersToggle" class="icon-button" type="button" aria-expanded="false" aria-controls="filterPanel"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filters</span><span id="filtersSummary" class="count"></span></button>
+          <div id="currencySwitch" class="currency-switch" role="group" aria-label="Display currency" hidden><button type="button" data-currency="AUD" aria-pressed="true">AUD</button><button type="button" data-currency="CNY" aria-pressed="false">CNY</button></div>
+          <button id="filtersToggle" class="icon-button" type="button" aria-label="Filters" aria-expanded="false" aria-controls="filterPanel"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span>Filters</span><span id="filtersSummary" class="count"></span></button>
           <span class="status __STATUS_CLASS__" title="__STATUS_LABEL__"><span class="status-text">__STATUS_LABEL__</span></span>
         </div>
       </div>
@@ -531,7 +538,7 @@
       </section>
 
       <section id="net-worth" class="page-section">
-        <div class="section-title"><h2>Net worth</h2><p id="netWorthNote">Bank cash and investments in AUD. The filters above do not apply here.</p></div>
+        <div class="section-title"><h2>Net worth</h2><p id="netWorthNote">Bank cash and investments. The filters above do not apply here.</p></div>
         <div id="netWorthAlerts" class="alerts"></div>
         <div class="nw-hero">
           <div class="card">
@@ -551,7 +558,7 @@
         <div class="card chart-card"><div class="card-head"><div><h2>Savings and investment returns</h2><p>How much each month added from saving, and from markets</p></div></div><div id="netWorthFlowChart" aria-label="Monthly savings and investment returns"></div></div>
         <div class="card section">
           <div class="card-head"><div><h2>Holdings</h2><p id="holdingsNote"></p></div></div>
-          <div class="table-wrap"><table><thead><tr><th>Holding</th><th>Account</th><th class="num">Units</th><th class="num">Price</th><th>Price date</th><th class="num">Value (AUD)</th><th class="num">Share</th></tr></thead><tbody id="holdingsBody"></tbody></table></div>
+          <div class="table-wrap"><table><thead><tr><th>Holding</th><th>Account</th><th class="num">Units</th><th class="num">Price</th><th>Price date</th><th class="num">Value</th><th class="num">Share</th></tr></thead><tbody id="holdingsBody"></tbody></table></div>
         </div>
         <p class="footnote">Investment returns are the change in value of the units held, from price moves and exchange rates, using Yahoo daily closes. Buying shares moves money from cash to investments, so it counts as neither savings nor returns. Savings is the rest of the change in net worth: what you kept from income after spending. Dividends paid into a broker's cash are not tracked yet. An account that first appears in a month counts as that month's savings.</p>
       </section>
@@ -624,8 +631,14 @@
     const statements = __STATEMENTS_JSON__;
     const categoryOptions = __CATEGORY_OPTIONS_JSON__;
     const netWorth = __NET_WORTH_JSON__;
-    const currency = new Intl.NumberFormat('en-AU', {style:'currency', currency:'AUD'});
-    const accounting = new Intl.NumberFormat('en-AU', {style:'currency', currency:'AUD', currencySign:'accounting'});
+    // Amounts are stored in AUD. The AUD/CNY switch rescales every amount in
+    // place at the build's AUD/CNY rate and swaps the formatters and chart prefixes.
+    const CURRENCY_SYMBOL = {AUD:'$', CNY:'¥'};
+    const audRates = {AUD:1, CNY:netWorth.fx?.CNY?.audRate || null};
+    let displayCurrency = 'AUD';
+    const moneyFormat = (code, extra={}) => new Intl.NumberFormat(code==='CNY' ? 'zh-CN' : 'en-AU', Object.assign({style:'currency', currency:code}, extra));
+    let currency = moneyFormat('AUD');
+    let accounting = moneyFormat('AUD', {currencySign:'accounting'});
     const integer = new Intl.NumberFormat('en-AU');
     const monthName = new Intl.DateTimeFormat('en-AU', {month:'short', year:'numeric'});
     const dayName = new Intl.DateTimeFormat('en-AU', {day:'numeric', month:'short', year:'numeric'});
@@ -742,7 +755,7 @@
 
     // Daily running balance per account, rebuilt from each statement's opening
     // balance plus its own transactions, so it is independent of the filters.
-    const balanceHistory = (() => {
+    const buildBalanceHistory = () => {
       const byPeriod={}, result={}, lastEnd={};
       transactions.forEach(row => { (byPeriod[`${row.account}|${row.statement_start}|${row.statement_end}`] ||= []).push(row); });
       [...statements].sort((a,b)=>String(a.statement_start).localeCompare(String(b.statement_start))).forEach(statement => {
@@ -759,7 +772,8 @@
       });
       Object.keys(result).forEach(account => { result[account]=[...result[account].entries()].sort((a,b)=>a[0].localeCompare(b[0])); });
       return result;
-    })();
+    };
+    let balanceHistory = buildBalanceHistory();
     // undefined: the account has no statement yet; null: a missing statement period.
     function balanceAt(account, day) {
       const points=balanceHistory[account]||[]; let value;
@@ -846,6 +860,16 @@
       }
       return layout;
     }
+    // Charts are written with $ formats; in CNY they show ¥ instead.
+    function plot(id, traces, layout, config) {
+      if (displayCurrency!=='AUD') {
+        const symbol=CURRENCY_SYMBOL[displayCurrency];
+        traces=traces.map(trace=>trace.hovertemplate ? Object.assign({}, trace, {hovertemplate:trace.hovertemplate.replace(/%\{([^:}]+):\$/g, `${symbol}%{$1:`)}) : trace);
+        layout=Object.assign({}, layout);
+        ['xaxis','yaxis'].forEach(axis=>{ if (layout[axis]?.tickprefix==='$') layout[axis]=Object.assign({}, layout[axis], {tickprefix:symbol}); });
+      }
+      return Plotly.react(id, traces, layout, config);
+    }
     const plotConfig = {responsive:true,displaylogo:false,displayModeBar:false,scrollZoom:false,doubleClick:false,showTips:false};
 
     function renderCharts(rows, range) {
@@ -862,11 +886,11 @@
         const days=[...new Set(traces.flatMap(trace=>trace.x))].sort();
         traces.push({name:'Total',x:days,y:days.map(day=>totalBalanceAt(balanceAccounts,day)),customdata:days,type:'scatter',mode:'lines',line:{color:t.line,width:2,dash:'dot',shape:'hv'},hovertemplate:'Total<br>%{x|%d %b %Y}<br>%{y:$,.2f}<extra></extra>'});
       }
-      Plotly.react('balanceChart', traces, baseLayout('', {showlegend:traces.length>1, legend:{orientation:'h',y:1.1,x:1,xanchor:'right'}, margin:{l:56,r:16,t:traces.length>1?36:16,b:40}, hovermode:'x unified', annotations:traces.length?[]:[{text:'No statement balances available',showarrow:false,xref:'paper',yref:'paper',x:.5,y:.5,font:{color:t.ink3}}]}), plotConfig);
+      plot('balanceChart', traces, baseLayout('', {showlegend:traces.length>1, legend:{orientation:'h',y:1.1,x:1,xanchor:'right'}, margin:{l:56,r:16,t:traces.length>1?36:16,b:40}, hovermode:'x unified', annotations:traces.length?[]:[{text:'No statement balances available',showarrow:false,xref:'paper',yref:'paper',x:.5,y:.5,font:{color:t.ink3}}]}), plotConfig);
 
       // Money in vs money out (hero chart)
       const income=groupSum(rows,row=>row.month,incomeValue), spend=groupSum(rows,row=>row.month,spendValue);
-      Plotly.react('cashflowChart',[
+      plot('cashflowChart',[
         {name:'Money in',x:months,y:months.map(m=>income[m]||0),customdata:months,type:'bar',marker:{color:lime,pattern:stripes(t)},hovertemplate:'%{y:$,.2f}<extra>Money in</extra>'},
         {name:'Money out',x:months,y:months.map(m=>spend[m]||0),customdata:months,type:'bar',marker:{color:orange,pattern:stripes(t)},hovertemplate:'%{y:$,.2f}<extra>Money out</extra>'},
         {name:'Net savings',x:months,y:months.map(m=>(income[m]||0)-(spend[m]||0)),customdata:months,type:'scatter',mode:'lines+markers',line:{color:t.line,width:1.5},marker:{size:7,color:t.panel,line:{color:t.line,width:2}},hovertemplate:'%{y:$,.2f}<extra>Net</extra>'}
@@ -875,7 +899,7 @@
       // Category share
       const categories=Object.entries(groupSum(spendRows(rows),row=>row.category,spendValue)).filter(x=>x[1]>0.005).sort((a,b)=>a[1]-b[1]);
       const spendTotal=categories.reduce((t,x)=>t+x[1],0);
-      Plotly.react('categoryChart',[{x:categories.map(x=>x[1]),y:categories.map(x=>x[0]),type:'bar',orientation:'h',marker:{color:categories.map(x=>categoryColor(x[0])),pattern:stripes(t)},text:categories.map(x=>spendTotal?`${(x[1]/spendTotal*100).toFixed(0)}%`:''),textposition:'outside',cliponaxis:false,textfont:{color:t.ink2},hovertemplate:'%{y}<br>%{x:$,.2f}<extra></extra>'}],baseLayout('',{margin:{l:140,r:44,t:10,b:36},xaxis:{tickprefix:'$',gridcolor:t.grid,griddash:'dot',tickformat:'~s'},yaxis:{gridcolor:t.panel,automargin:true,tickfont:{color:t.ink2}}}),plotConfig);
+      plot('categoryChart',[{x:categories.map(x=>x[1]),y:categories.map(x=>x[0]),type:'bar',orientation:'h',marker:{color:categories.map(x=>categoryColor(x[0])),pattern:stripes(t)},text:categories.map(x=>spendTotal?`${(x[1]/spendTotal*100).toFixed(0)}%`:''),textposition:'outside',cliponaxis:false,textfont:{color:t.ink2},hovertemplate:'%{y}<br>%{x:$,.2f}<extra></extra>'}],baseLayout('',{margin:{l:140,r:44,t:10,b:36},xaxis:{tickprefix:'$',gridcolor:t.grid,griddash:'dot',tickformat:'~s'},yaxis:{gridcolor:t.panel,automargin:true,tickfont:{color:t.ink2}}}),plotConfig);
 
       // Category trend (top five categories + other)
       const trendRows=spendRows(rows), groups=[...topCategories, 'Other'];
@@ -883,12 +907,12 @@
         const values=groupSum(trendRows.filter(row=>group==='Other' ? !topCategories.includes(row.category) : row.category===group), row=>row.month, spendValue);
         return {name:group,x:months,y:months.map(m=>values[m]||0),customdata:months,type:'bar',marker:{color:group==='Other'?cssVar('--series-other'):categoryColor(group),line:{color:t.panel,width:1.5}},hovertemplate:`${esc(group)}<br>%{x|%b %Y}<br>%{y:$,.2f}<extra></extra>`};
       }).filter(trace=>trace.y.some(value=>Math.abs(value)>0.005));
-      Plotly.react('categoryTrendChart',trendTraces,baseLayout('',{barmode:'relative',barcornerradius:4,showlegend:true,legend:{orientation:'h',y:-0.14},margin:{l:56,r:16,t:10,b:70},xaxis:{gridcolor:t.panel,type:'date',tickformat:'%b %Y',dtick:'M1'}}),plotConfig);
+      plot('categoryTrendChart',trendTraces,baseLayout('',{barmode:'relative',barcornerradius:4,showlegend:true,legend:{orientation:'h',y:-0.14},margin:{l:56,r:16,t:10,b:70},xaxis:{gridcolor:t.panel,type:'date',tickformat:'%b %Y',dtick:'M1'}}),plotConfig);
 
       // Top merchants
       const merchants=Object.entries(groupSum(spendRows(rows),row=>row.merchant,spendValue)).filter(x=>x[1]>0.005).sort((a,b)=>b[1]-a[1]).slice(0,10).reverse();
       bindChartTaps();
-      Plotly.react('merchantChart',[{x:merchants.map(x=>x[1]),y:merchants.map(x=>x[0]),type:'bar',orientation:'h',marker:{color:lime,pattern:stripes(t)},hovertemplate:'%{y}<br>%{x:$,.2f}<extra></extra>'}],baseLayout('',{margin:{l:160,r:20,t:10,b:36},xaxis:{tickprefix:'$',gridcolor:t.grid,griddash:'dot',tickformat:'~s'},yaxis:{gridcolor:t.panel,automargin:true,tickfont:{color:t.ink2}}}),plotConfig);
+      plot('merchantChart',[{x:merchants.map(x=>x[1]),y:merchants.map(x=>x[0]),type:'bar',orientation:'h',marker:{color:lime,pattern:stripes(t)},hovertemplate:'%{y}<br>%{x:$,.2f}<extra></extra>'}],baseLayout('',{margin:{l:160,r:20,t:10,b:36},xaxis:{tickprefix:'$',gridcolor:t.grid,griddash:'dot',tickformat:'~s'},yaxis:{gridcolor:t.panel,automargin:true,tickfont:{color:t.ink2}}}),plotConfig);
     }
 
     function lineValues(rows, keyFn, valueFn) {
@@ -1122,7 +1146,7 @@
     const rangeSuffix = () => { const range=currentRange(); return range.start && range.end ? `_${range.start}_to_${range.end}` : ''; };
     function exportTransactions() {
       const rows=sortedTransactions(tableRows(filteredRows()));
-      downloadCsv(`transactions${rangeSuffix()}.csv`, [['Date','Account','Merchant','Description','Type','Category','Subcategory','Debit','Credit'], ...rows.map(row=>[row.date,row.account,row.merchant,row.raw_description,row.kind,row.category,row.subcategory,Number(row.debit)?Number(row.debit).toFixed(2):'',Number(row.credit)?Number(row.credit).toFixed(2):''])]);
+      downloadCsv(`transactions${rangeSuffix()}.csv`, [['Date','Account','Merchant','Description','Type','Category','Subcategory',`Debit (${displayCurrency})`,`Credit (${displayCurrency})`], ...rows.map(row=>[row.date,row.account,row.merchant,row.raw_description,row.kind,row.category,row.subcategory,Number(row.debit)?Number(row.debit).toFixed(2):'',Number(row.credit)?Number(row.credit).toFixed(2):''])]);
     }
     function exportStatement() {
       if (!lastStatement) return;
@@ -1218,6 +1242,22 @@
       byId('filtersSummary').textContent=chips.length ? String(chips.length) : '';
     }
 
+    function setDisplayCurrency(code) {
+      if (!audRates[code] || code===displayCurrency) return;
+      const factor=audRates[code]/audRates[displayCurrency], scale=(item, fields)=>fields.forEach(field=>{ if (item[field]!==null && item[field]!==undefined && item[field]!=='' && !isNaN(item[field])) item[field]=Number(item[field])*factor; });
+      transactions.forEach(row=>scale(row, ['debit','credit','signed_amount','amount']));
+      statements.forEach(row=>scale(row, ['opening_balance','closing_balance','printed_debits','printed_credits','computed_debits','computed_credits','debit_difference','credit_difference','balance_difference']));
+      (netWorth.months||[]).forEach(row=>{ scale(row, ['cash','investments','netWorth','returns','savings']); scale(row.cashAccounts||{}, Object.keys(row.cashAccounts||{})); });
+      Object.values(netWorth.years||{}).forEach(row=>scale(row, ['start','end','savings','returns']));
+      (netWorth.holdings||[]).forEach(row=>scale(row, ['valueAUD']));
+      displayCurrency=code;
+      currency=moneyFormat(code); accounting=moneyFormat(code, {currencySign:'accounting'});
+      balanceHistory=buildBalanceHistory();
+      document.querySelectorAll('#currencySwitch button').forEach(button=>button.setAttribute('aria-pressed', String(button.dataset.currency===code)));
+      try { localStorage.setItem('displayCurrency', code); } catch (error) {}
+      render();
+    }
+
     function renderNetWorth() {
       const alerts=(netWorth.problems||[]).map(text=>`<div class="alert warn">${esc(text)}</div>`);
       if (!netWorth.available) {
@@ -1244,13 +1284,13 @@
         ['Net worth at end',currency.format(year.end),'total'],
       ].map(([label,value,cls])=>`<div class="${cls==='total'?'total':''}"><dt>${label}</dt><dd${cls==='neg'?' style="color:var(--bad)"':''}>${value}</dd></div>`).join('');
       const x=months.map(row=>row.date.slice(0,7));
-      Plotly.react('netWorthChart',[
+      plot('netWorthChart',[
         {name:'Cash',x,y:months.map(row=>row.cash),type:'bar',marker:{color:lime,pattern:stripes(t)},hovertemplate:'%{y:$,.0f}<extra>Cash</extra>'},
         {name:'Investments',x,y:months.map(row=>row.investments),type:'bar',marker:{color:orange,pattern:stripes(t)},hovertemplate:'%{y:$,.0f}<extra>Investments</extra>'},
         {name:'Net worth',x,y:months.map(row=>row.netWorth),type:'scatter',mode:'lines+markers',line:{color:t.line,width:2},marker:{size:5},hovertemplate:'%{y:$,.0f}<extra>Net worth</extra>'},
       ],baseLayout('',{barmode:'stack',showlegend:true,legend:{orientation:'h',y:1.12,x:1,xanchor:'right'},margin:{l:56,r:16,t:36,b:40},hovermode:'x unified',xaxis:{gridcolor:t.panel,type:'date',tickformat:'%b %Y',dtick:'M1'}}),plotConfig);
       const flows=months.slice(1), fx2=flows.map(row=>row.date.slice(0,7));
-      Plotly.react('netWorthFlowChart',[
+      plot('netWorthFlowChart',[
         {name:'Savings',x:fx2,y:flows.map(row=>row.savings),type:'bar',marker:{color:lime,pattern:stripes(t)},hovertemplate:'%{y:$,.0f}<extra>Savings</extra>'},
         {name:'Investment returns',x:fx2,y:flows.map(row=>row.returns),type:'bar',marker:{color:orange,pattern:stripes(t)},hovertemplate:'%{y:$,.0f}<extra>Investment returns</extra>'},
       ],baseLayout('',{barmode:'group',showlegend:true,legend:{orientation:'h',y:1.12,x:1,xanchor:'right'},margin:{l:56,r:16,t:36,b:40},hovermode:'x unified',xaxis:{gridcolor:t.panel,type:'date',tickformat:'%b %Y',dtick:'M1'}}),plotConfig);
@@ -1302,7 +1342,12 @@
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>render());
     const sectionLinks=[...document.querySelectorAll('.nav a')];
     if ('IntersectionObserver' in window) { const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{ if (entry.isIntersecting) sectionLinks.forEach(link=>link.classList.toggle('active', link.getAttribute('href')===`#${entry.target.id}`)); }),{rootMargin:'-45% 0px -50% 0px'}); sectionLinks.forEach(link=>{ const target=document.querySelector(link.getAttribute('href')); if (target) observer.observe(target); }); }
-    populateFilters(); render(); if (window.location.protocol === 'file:') setSaveStatus('Open it with Dashboard.command (Edit) to save category changes.', 'error');
+    if (audRates.CNY) {
+      byId('currencySwitch').hidden=false;
+      document.querySelectorAll('#currencySwitch button').forEach(button=>button.addEventListener('click',()=>setDisplayCurrency(button.dataset.currency)));
+    }
+    populateFilters(); render();
+    try { if (localStorage.getItem('displayCurrency')==='CNY') setDisplayCurrency('CNY'); } catch (error) {} if (window.location.protocol === 'file:') setSaveStatus('Open it with Dashboard.command (Edit) to save category changes.', 'error');
   </script>
 </body>
 </html>
