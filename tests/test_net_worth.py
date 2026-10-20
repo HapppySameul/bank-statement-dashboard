@@ -147,3 +147,19 @@ def test_saver_statements_replace_the_hand_kept_cash_record():
     assert cash["2026-01-31"] == {"Saver": 1000.0}
     assert cash["2026-02-28"] == {"Saver": 1200.0}
     assert cash["2026-03-31"] == {"Saver": 700.0}
+
+
+def test_aud_cny_rate_is_always_fetched_for_the_currency_switch():
+    from net_worth import net_worth_for_dashboard
+
+    asked = []
+
+    def fetch(symbol, start):
+        asked.append(symbol)
+        return {"closes": {"2026-01-02": 4.5}, "splits": {}}
+
+    statements = [{"account": "Bank", "statement_start": "2026-01-01", "statement_end": "2026-01-31", "opening_balance": 10.0, "closing_balance": 10.0}]
+    result = net_worth_for_dashboard(None, pd.DataFrame(columns=EXPECTED_COLUMNS), statements, None, today="2026-01-31", fetch=fetch)
+
+    assert asked == ["AUDCNY=X"]
+    assert result["fx"]["CNY"] == {"date": "2026-01-02", "audRate": 4.5}
