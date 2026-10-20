@@ -12,6 +12,8 @@ import fitz
 import pandas as pd
 from plotly.offline import get_plotlyjs
 
+from net_worth import net_worth_for_dashboard
+
 
 MONTHS = {
     "jan": 1,
@@ -628,9 +630,191 @@ def _parse_ing_open_statement_document(
     return transactions, [summary]
 
 
+BOQ_RECONCILIATION_METHOD = "every_row_balance_and_printed_totals"
+
+
+def _extract_boq_statement_period(text: str) -> Optional[Tuple[date, date]]:
+    """Read BOQ's "26 Aug 2025 - 26 Feb 2026" statement period."""
+    match = re.search(
+        r"(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})\s+-\s+(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})",
+        text,
+    )
+    if not match:
+        return None
+    return (
+        datetime.strptime(match.group(1).title(), "%d %b %Y").date(),
+        datetime.strptime(match.group(2).title(), "%d %b %Y").date(),
+    )
+
+
+def _boq_merchant(raw_description: str) -> str:
+    """Name a BOQ transfer by its counterparty: "To: Everyday Account 123456789" -> "Everyday Account"."""
+    body = re.sub(r"^(?:To|From):\s*", "", raw_description, flags=re.I)
+    body = re.sub(r"\s+(?:NA|\d{3}-\d{3}\s+\d+|\d{6,})(?:\s.*)?$", "", body)
+    return body.strip() or raw_description
+
+
+def _parse_boq_open_statement_document(
+    path: Path,
+    known_map: Dict[str, object],
+    document: fitz.Document,
+) -> Tuple[List[Dict[str, object]], List[Dict[str, object]]]:
+    """Parse BOQ savings statements with Debits/Credits/Balance columns.
+
+    Every transaction row prints the running balance, so each row is checked
+    against it, and the totals against the account summary on page 1.
+    """
+    first_page = document[0].get_text()
+    period = _extract_boq_statement_period(first_page)
+    if period is None:
+        raise ValueError(f"Could not read the BOQ statement dates from {path.name}")
+    period_start, period_end = period
+    money = re.compile(r"\$\s*(-?[\d,]+\.\d{2})")
+    totals = re.search(r"Closing balance\s+((?:\$\s*-?[\d,]+\.\d{2}\s+){4})", first_page)
+    if not totals:
+        raise ValueError(f"Could not read the BOQ account summary from {path.name}")
+    opening, printed_credits, printed_debits, closing = (
+        float(value.replace(",", "")) for value in money.findall(totals.group(1))
+    )
+    account_name = re.search(r"\n([^\n]+)\nAccount name", first_page)
+    summary: Dict[str, object] = {
+        "statement_start": period_start.isoformat(),
+        "statement_end": period_end.isoformat(),
+        "opening_balance": opening,
+        "closing_balance": closing,
+        "printed_debits": abs(printed_debits),
+        "printed_credits": printed_credits,
+        "computed_debits": 0.0,
+        "computed_credits": 0.0,
+        "debit_difference": None,
+        "credit_difference": None,
+        "balance_difference": None,
+        "reconciliation_method": BOQ_RECONCILIATION_METHOD,
+        "reconciled": False,
+        "bank": "BOQ",
+        "account_name": account_name.group(1).strip() if account_name else "",
+    }
+    transactions: List[Dict[str, object]] = []
+    descriptions: List[List[str]] = []
+    row_balances: List[float] = []
+    last_row: Optional[Tuple[int, float]] = None  # (page, y) of the last description line
+
+    for page_index, page in enumerate(document):
+        for y, items in _group_word_rows(page.get_text("words")):
+            date_cell = _row_text(items, 40, 95)
+            date_match = re.fullmatch(r"(\d{1,2})-([A-Za-z]{3})", date_cell)
+            balance = _ing_column_money(items, 470, 580)
+            if date_match and balance is not None:
+                transaction_date = _date_within_statement(
+                    int(date_match.group(1)), date_match.group(2), period_start, period_end
+                )
+                debit = abs(_ing_column_money(items, 280, 370) or 0.0)
+                credit = abs(_ing_column_money(items, 370, 470) or 0.0)
+                transactions.append(
+                    {
+                        "source_file": path.name,
+                        "source_page": page_index + 1,
+                        "statement_page": page_index + 1,
+                        "statement_start": period_start.isoformat(),
+                        "statement_end": period_end.isoformat(),
+                        "date": transaction_date.isoformat(),
+                        "debit": round(debit, 2),
+                        "credit": round(credit, 2),
+                    }
+                )
+                descriptions.append([_row_text(items, 170, 280)])
+                row_balances.append(balance)
+                last_row = (page_index, y)
+                continue
+            # Continuation lines sit directly under the transaction (about 11pt
+            # apart); anything further down is page furniture or notes.
+            if (
+                last_row
+                and last_row[0] == page_index
+                and 0 < y - last_row[1] <= 16
+                and items
+                and all(170 <= x < 280 for x, _ in items)
+            ):
+                descriptions[-1].append(_row_text(items, 170, 280))
+                last_row = (page_index, y)
+
+    running = opening
+    mismatched_rows = 0
+    for record, lines, printed_balance in zip(transactions, descriptions, row_balances):
+        running = round(running + record["credit"] - record["debit"], 2)
+        if abs(running - printed_balance) > 0.01:
+            mismatched_rows += 1
+        raw_description = re.sub(r"\s+", " ", " ".join(lines)).strip()
+        debit, credit = record["debit"], record["credit"]
+        upper = raw_description.upper()
+        # BOQ shows every incoming payment as "From: ...", so an employer is
+        # named in the local rule_patterns["income_salary"] (never in this file).
+        is_salary = credit > 0 and any(
+            re.search(pattern, raw_description, re.I) for pattern in _rule_patterns(known_map, "income_salary", [])
+        )
+        if is_salary:
+            kind = "income"
+        elif credit > 0:
+            kind = "incoming_transfer" if upper.startswith("FROM:") else "income"
+        else:
+            kind = "outgoing_transfer" if upper.startswith("TO:") else "expense"
+        category = infer_category(_boq_merchant(raw_description), max(debit, credit), raw_description, known_map, kind)
+        if is_salary:
+            category.update(category="Income", subcategory="Salary", category_source="local_rule", rule_id="income_salary", confidence=1.0, review_status="auto")
+        elif "INTEREST" in upper and kind == "income":
+            category.update(category="Income", subcategory="Interest", category_source="system", rule_id="boq_interest", confidence=1.0, review_status="auto")
+        record.update(
+            raw_description=raw_description,
+            merchant=category["merchant"],
+            signed_amount=round(credit - debit, 2),
+            amount=round(max(debit, credit), 2),
+            kind=kind,
+            category=category["category"],
+            subcategory=category["subcategory"],
+            category_source=category["category_source"],
+            rule_id=category["rule_id"],
+            confidence=category["confidence"],
+            review_status=category["review_status"],
+        )
+
+    occurrence_counts: Dict[Tuple, int] = defaultdict(int)
+    for record in transactions:
+        identity = tuple(
+            record.get(field)
+            for field in ("statement_start", "statement_end", "date", "raw_description", "debit", "credit")
+        )
+        occurrence_counts[identity] += 1
+        record["transaction_id"] = _new_transaction_id(record, occurrence_counts[identity])
+
+    summary["computed_debits"] = round(sum(float(row["debit"]) for row in transactions), 2)
+    summary["computed_credits"] = round(sum(float(row["credit"]) for row in transactions), 2)
+    summary["debit_difference"] = round(summary["computed_debits"] - summary["printed_debits"], 2)
+    summary["credit_difference"] = round(summary["computed_credits"] - summary["printed_credits"], 2)
+    summary["balance_difference"] = round(running - closing, 2)
+    summary["mismatched_rows"] = mismatched_rows
+    summary["reconciled"] = (
+        bool(transactions)
+        and mismatched_rows == 0
+        and all(abs(summary[field]) <= 0.01 for field in ("debit_difference", "credit_difference", "balance_difference"))
+    )
+    summary["transaction_count"] = len(transactions)
+
+    for record in transactions:
+        flags: List[str] = []
+        if not summary["reconciled"]:
+            flags.append("statement_unreconciled")
+        if record["review_status"] == "review":
+            flags.append("needs_category_review")
+        record["quality_flag"] = ";".join(flags)
+
+    return transactions, [summary]
+
+
 def _detect_open_document_bank(document: fitz.Document) -> Optional[str]:
-    """Return "ing", "hsbc", or None when the PDF is not a supported statement."""
+    """Return "ing", "hsbc", "boq", or None when the PDF is not a supported statement."""
     first_page_text = document[0].get_text() if len(document) else ""
+    if "Bank of Queensland" in first_page_text and "Account summary" in first_page_text:
+        return "boq"
     if "ING is a business name" in first_page_text and re.search(
         r"\bDeposit\(\$\).*\bWithdrawal\(\$\).*\bBalance\(\$\)",
         first_page_text,
@@ -663,8 +847,11 @@ def _parse_open_statement_document(
     known_map: Dict[str, object],
     document: fitz.Document,
 ) -> Tuple[List[Dict[str, object]], List[Dict[str, object]]]:
-    if _detect_open_document_bank(document) == "ing":
+    bank = _detect_open_document_bank(document)
+    if bank == "ing":
         return _parse_ing_open_statement_document(path, known_map, document)
+    if bank == "boq":
+        return _parse_boq_open_statement_document(path, known_map, document)
 
     transactions: List[Dict[str, object]] = []
     summaries: Dict[Tuple[date, date], Dict[str, object]] = {}
@@ -1140,6 +1327,7 @@ def build_dashboard(
     df: pd.DataFrame,
     output_path: Path,
     reconciliation: Optional[List[Dict[str, object]]] = None,
+    net_worth: Optional[Dict[str, object]] = None,
 ) -> None:
     data = df.reindex(columns=EXPECTED_COLUMNS).copy()
     for column in ("debit", "credit", "signed_amount", "amount", "confidence"):
@@ -1187,6 +1375,7 @@ def build_dashboard(
         "TRANSACTIONS_JSON": _safe_json(records),
         "STATEMENTS_JSON": _safe_json(statements),
         "CATEGORY_OPTIONS_JSON": _safe_json(category_options),
+        "NET_WORTH_JSON": _safe_json(net_worth or {"available": False, "problems": []}),
         "PLOTLY_JS": get_plotlyjs(),
     }
     template = DASHBOARD_TEMPLATE_PATH.read_text(encoding="utf-8")
@@ -1194,6 +1383,13 @@ def build_dashboard(
     document = re.sub(r"__([A-Z_]+)__", lambda match: values.get(match.group(1), match.group(0)), template)
     document = "\n".join(line.rstrip() for line in document.splitlines()) + "\n"
     output_path.write_text(document, encoding="utf-8")
+
+
+def load_net_worth_settings(path: Optional[str]) -> Dict[str, object]:
+    """Read the git-ignored Net worth settings; a missing file means no settings."""
+    if not path or not Path(path).is_file():
+        return {}
+    return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
 def main() -> None:
@@ -1205,6 +1401,9 @@ def main() -> None:
     parser.add_argument("--reconciliation-file", default="statement_reconciliation.json", help="Statement-level reconciliation output")
     parser.add_argument("--import-log-file", default="statement_import_log.json", help="Registry of previously imported statement PDFs")
     parser.add_argument("--output-html", default="index.html", help="Dashboard HTML output")
+    parser.add_argument("--investment-dir", default=None, help="Investment project folder with portfolio/current_portfolio.json, for the Net worth section")
+    parser.add_argument("--price-cache-file", default=None, help="Where the last good Yahoo prices are kept for offline builds")
+    parser.add_argument("--net-worth-settings", default=None, help="Local JSON settings for the Net worth section, e.g. {\"saver_account\": \"<bank>\"}")
     args = parser.parse_args()
 
     root = Path(args.statement_dir).resolve()
@@ -1272,7 +1471,7 @@ def main() -> None:
             # Unrelated PDFs are left alone and not logged, so they are checked
             # again (and skipped again) on the next run.
             print(
-                f"Skipped {statement_file.name}: not a recognised HSBC or ING statement. "
+                f"Skipped {statement_file.name}: not a recognised bank statement. "
                 "Move it out of this folder if it is not a bank statement."
             )
             unrelated_files += 1
@@ -1359,7 +1558,18 @@ def main() -> None:
         dashboard_frame = dashboard_frame.sort_values(
             ["date", "source_page", "transaction_id"], kind="stable"
         )
-    build_dashboard(dashboard_frame, output_path, summaries)
+    net_worth = None
+    if args.investment_dir:
+        net_worth = net_worth_for_dashboard(
+            Path(args.investment_dir).expanduser(),
+            dashboard_frame,
+            [dict(summary, account=statement_account(summary)) for summary in summaries],
+            Path(args.price_cache_file).resolve() if args.price_cache_file else None,
+            saver_account=load_net_worth_settings(args.net_worth_settings).get("saver_account"),
+        )
+        for problem in net_worth.get("problems", []):
+            print(f"Net worth: {problem}")
+    build_dashboard(dashboard_frame, output_path, summaries, net_worth)
 
     if imported_pdf_count:
         print(f"Imported {imported_pdf_count} new PDF(s)")
@@ -1369,7 +1579,7 @@ def main() -> None:
         print("No new statements found; transaction CSV left unchanged")
     print(f"Skipped {skipped_files} previously imported PDF(s)")
     if unrelated_files:
-        print(f"Skipped {unrelated_files} PDF(s) that are not HSBC or ING statements")
+        print(f"Skipped {unrelated_files} PDF(s) that are not bank statements")
     print(f"Validated transaction history: {len(history)} rows")
     print(f"Transaction CSV: {history_path}")
     print(f"Reconciliation file: {reconciliation_path}")

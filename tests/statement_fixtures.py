@@ -1,4 +1,4 @@
-"""Generate small, fake HSBC and ING statement PDFs for tests.
+"""Generate small, fake HSBC, ING and BOQ statement PDFs for tests.
 
 The PDFs copy the column positions the parser expects from the real layouts but
 contain only invented transactions, so the test suite can run anywhere (including
@@ -139,6 +139,82 @@ def write_ing_statement(
     document.save(path)
     document.close()
     return path
+
+
+BoqRow = Tuple[str, str, Optional[str], Optional[str]]
+
+
+def write_boq_statement(
+    path: Path,
+    period: str,
+    opening_balance: float,
+    rows: Sequence[BoqRow],
+    misprinted_balance_row: Optional[int] = None,
+) -> Path:
+    """Write a BOQ savings statement. Each row is (dd-Mon, description, debit, credit).
+
+    A description may hold "\n" for its continuation lines. Page 1 is the account
+    summary; transactions follow on page 2 with a running balance on every row.
+    """
+    total_debits = sum(float(row[2].replace(",", "")) for row in rows if row[2])
+    total_credits = sum(float(row[3].replace(",", "")) for row in rows if row[3])
+    closing = round(opening_balance + total_credits - total_debits, 2)
+    document = fitz.open()
+    page = document.new_page(width=595, height=842)
+    text = _writer(page)
+    lines = ["Future Saver Statement", "Statement period", period, "Account summary", "Opening balance",
+             "Total credits", "Total debits", "Closing balance", f"${_money(opening_balance)}",
+             f"${_money(total_credits)}", f"$ {_money(total_debits)}", f"${_money(closing)}",
+             "Future Saver", "Account name", "Bank of Queensland Limited ABN 00 000 000 000 (BOQ)"]
+    for index, line in enumerate(lines):
+        text(43, 60 + index * 14, line)
+
+    page = document.new_page(width=595, height=842)
+    text = _writer(page)
+    text(55, 100, "Date")
+    text(104, 100, "Processed")
+    text(180, 100, "Description")
+    text(288, 100, "Debits ($)")
+    text(388, 100, "Credits ($)")
+    text(489, 100, "Balance ($)")
+    text(53, 125, period[-4:] if not rows else period.split()[2])
+    balance, y = opening_balance, 150
+    for index, (day, description, debit, credit) in enumerate(rows):
+        if debit:
+            balance -= float(debit.replace(",", ""))
+        if credit:
+            balance += float(credit.replace(",", ""))
+        first, *rest = description.split("\n")
+        text(52, y, day)
+        text(104, y, day)
+        text(180, y, first)
+        if debit:
+            text(320, y, f"-{debit}")
+        if credit:
+            text(420, y, credit)
+        printed = balance + (1 if index == misprinted_balance_row else 0)
+        text(500, y, _money(round(printed, 2)))
+        for line in rest:
+            y += 11
+            text(180, y, line)
+        y += 30
+    text(180, 760, "Notes about how interest is regularly updated.")
+    text(43, 814, "Page 2 of 2 | Statement continues over")
+    document.save(path)
+    document.close()
+    return path
+
+
+SAMPLE_BOQ_ROWS = [
+    ("14-Dec", "From: ACME PAYROLL 123456", None, "3,000.00"),
+    ("20-Dec", "To: Everyday\nAccount\n123456789", "500.00", None),
+    ("31-Dec", "Bonus Interest", None, "12.34"),
+    ("05-Jan", "From: Everyday\nAccount\n123456789", None, "250.00"),
+]
+
+
+def write_sample_boq_statement(path: Path, misprinted_balance_row: Optional[int] = None) -> Path:
+    return write_boq_statement(path, "10 Dec 2025 - 09 Jan 2026", 1000.00, SAMPLE_BOQ_ROWS, misprinted_balance_row)
 
 
 # Two HSBC statement periods spanning a new year, with a reference number in a

@@ -261,6 +261,17 @@
     .account-card dl { display:grid; grid-template-columns:auto 1fr; gap:6px 12px; margin:14px 0 0; font-size:.84rem; }
     .account-card dt { color:var(--ink-3); } .account-card dd { margin:0; text-align:right; }
     .alerts { display:grid; gap:8px; margin-bottom:18px; }
+    .nw-hero { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; margin-bottom:18px; }
+    .nw-split { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:18px; }
+    .nw-split div { border-radius:14px; padding:14px 16px; background:var(--panel-alt); }
+    .nw-split span { display:flex; align-items:center; color:var(--ink-3); font-size:.8rem; }
+    .nw-split strong { display:block; font-size:1.35rem; font-weight:600; letter-spacing:-.02em; margin-top:4px; font-variant-numeric:tabular-nums; }
+    .nw-bridge { display:grid; gap:10px; margin:16px 0 0; }
+    .nw-bridge div { display:flex; justify-content:space-between; gap:12px; font-size:.92rem; }
+    .nw-bridge dt { color:var(--ink-2); } .nw-bridge dd { margin:0; font-weight:600; font-variant-numeric:tabular-nums; }
+    .nw-bridge .total { border-top:1px solid var(--line-strong); padding-top:10px; }
+    .nw-year { width:auto; padding:6px 30px 6px 12px; border-radius:10px; }
+    #netWorthChart, #netWorthFlowChart { height:320px; }
     .alert { padding:12px 16px; border-radius:14px; font-size:.87rem; }
     .alert.warn { color:var(--warn); background:var(--warn-bg); } .alert.ok { color:var(--good); background:var(--good-bg); }
     .quality-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
@@ -318,6 +329,7 @@
       .filters { grid-template-columns:repeat(3,minmax(0,1fr)); }
       .grid-3 { grid-template-columns:repeat(2,minmax(0,1fr)); } .grid-3 > :last-child { grid-column:1 / -1; }
     }
+    @media (max-width:1000px) { .nw-hero { grid-template-columns:minmax(0,1fr); } }
     @media (max-width:760px) {
       body { font-size:15px; }
       .app { display:block; background:var(--canvas); }
@@ -404,6 +416,7 @@
       <div class="brand"><span class="brand-mark" aria-hidden="true">$</span><span>Statements</span></div>
       <nav class="nav" aria-label="Dashboard sections">
         <a href="#overview"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg><span class="label">Overview</span><span class="short">Overview</span></a>
+        <a href="#net-worth"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19l5-6 4 3 7-9"/><path d="M15 7h5v5"/></svg><span class="label">Net worth</span><span class="short">Worth</span></a>
         <a href="#income-statement"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/></svg><span class="label">Income statement</span><span class="short">Statement</span></a>
         <a href="#spending"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5H12z"/><path d="M15 3.8a8.5 8.5 0 0 1 5.2 5.2H15z"/></svg><span class="label">Spending</span><span class="short">Spending</span></a>
         <a href="#accounts"><svg class="svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"/></svg><span class="label">Accounts &amp; reconciliation</span><span class="short">Accounts</span></a>
@@ -517,6 +530,32 @@
         <p class="footnote">Money in is income and cashback. Money out is spending net of refunds. Transfers between accounts are excluded from both; a transfer you recategorise on the Transactions table (for example rent paid by transfer) is counted by its new category.</p>
       </section>
 
+      <section id="net-worth" class="page-section">
+        <div class="section-title"><h2>Net worth</h2><p id="netWorthNote">Bank cash and investments in AUD. The filters above do not apply here.</p></div>
+        <div id="netWorthAlerts" class="alerts"></div>
+        <div class="nw-hero">
+          <div class="card">
+            <div class="card-head"><div><h2>Net worth today</h2><p id="netWorthAsOf"></p></div></div>
+            <p class="big" id="netWorthTotal">–</p>
+            <div class="nw-split">
+              <div><span><i class="swatch" style="background:var(--lime)"></i>Cash</span><strong id="netWorthCash">–</strong></div>
+              <div><span><i class="swatch" style="background:var(--orange)"></i>Investments</span><strong id="netWorthInvested">–</strong></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h2>Where the change came from</h2><p id="netWorthBridgeNote"></p></div><select id="netWorthYear" class="nw-year" aria-label="Year"></select></div>
+            <dl id="netWorthBridge" class="nw-bridge"></dl>
+          </div>
+        </div>
+        <div class="card chart-card"><div class="card-head"><div><h2>Net worth by month</h2><p>Cash and investments at each month end</p></div></div><div id="netWorthChart" aria-label="Net worth by month"></div></div>
+        <div class="card chart-card"><div class="card-head"><div><h2>Savings and investment returns</h2><p>How much each month added from saving, and from markets</p></div></div><div id="netWorthFlowChart" aria-label="Monthly savings and investment returns"></div></div>
+        <div class="card section">
+          <div class="card-head"><div><h2>Holdings</h2><p id="holdingsNote"></p></div></div>
+          <div class="table-wrap"><table><thead><tr><th>Holding</th><th>Account</th><th class="num">Units</th><th class="num">Price</th><th>Price date</th><th class="num">Value (AUD)</th><th class="num">Share</th></tr></thead><tbody id="holdingsBody"></tbody></table></div>
+        </div>
+        <p class="footnote">Investment returns are the change in value of the units held, from price moves and exchange rates, using Yahoo daily closes. Buying shares moves money from cash to investments, so it counts as neither savings nor returns. Savings is the rest of the change in net worth: what you kept from income after spending. Dividends paid into a broker's cash are not tracked yet. An account that first appears in a month counts as that month's savings.</p>
+      </section>
+
       <section id="income-statement" class="page-section">
         <div class="card section">
           <div class="card-head"><div><h2>Income statement</h2><p>Monthly income and spending by category for the selected filters</p></div><button id="exportStatement" class="secondary no-print" type="button">Export CSV</button></div>
@@ -584,6 +623,7 @@
     const transactions = __TRANSACTIONS_JSON__;
     const statements = __STATEMENTS_JSON__;
     const categoryOptions = __CATEGORY_OPTIONS_JSON__;
+    const netWorth = __NET_WORTH_JSON__;
     const currency = new Intl.NumberFormat('en-AU', {style:'currency', currency:'AUD'});
     const accounting = new Intl.NumberFormat('en-AU', {style:'currency', currency:'AUD', currencySign:'accounting'});
     const integer = new Intl.NumberFormat('en-AU');
@@ -1178,7 +1218,49 @@
       byId('filtersSummary').textContent=chips.length ? String(chips.length) : '';
     }
 
+    function renderNetWorth() {
+      const alerts=(netWorth.problems||[]).map(text=>`<div class="alert warn">${esc(text)}</div>`);
+      if (!netWorth.available) {
+        byId('netWorthAlerts').innerHTML=alerts.join('') || '<div class="alert warn">No investment holdings were found. Keep the Investment folder next to this one on the Desktop and run Dashboard.command again.</div>';
+        return;
+      }
+      byId('netWorthAlerts').innerHTML=alerts.join('');
+      const months=netWorth.months, latest=months[months.length-1], t=theme(), lime=cssVar('--lime'), orange=cssVar('--orange');
+      byId('netWorthTotal').textContent=currency.format(latest.netWorth);
+      byId('netWorthCash').textContent=currency.format(latest.cash);
+      byId('netWorthInvested').textContent=currency.format(latest.investments);
+      const fxText=Object.entries(netWorth.fx||{}).map(([code,rate])=>`A$1 = ${rate.audRate.toFixed(4)} ${code}`).join(' · ');
+      byId('netWorthAsOf').textContent=`Prices as of ${dayName.format(new Date(netWorth.asOf+'T00:00'))}${fxText?` · ${fxText}`:''}`;
+      const yearSelect=byId('netWorthYear'), years=Object.keys(netWorth.years).sort().reverse();
+      if (!yearSelect.options.length) { yearSelect.innerHTML=years.map(year=>`<option>${esc(year)}</option>`).join(''); yearSelect.addEventListener('change',renderNetWorth); }
+      const year=netWorth.years[yearSelect.value]||netWorth.years[years[0]];
+      const day=value=>dayName.format(new Date(value+'T00:00'));
+      byId('netWorthBridgeNote').textContent=year.partialStart?`From ${day(year.startDate)}, when the holdings records start`:`From ${day(year.startDate)} to ${day(year.endDate)}`;
+      const signed=value=>`${value<0?'−':'+'}${currency.format(Math.abs(value))}`;
+      byId('netWorthBridge').innerHTML=[
+        ['Net worth at start',currency.format(year.start),''],
+        ['Savings from income',signed(year.savings),year.savings<0?'neg':''],
+        ['Investment returns',signed(year.returns),year.returns<0?'neg':''],
+        ['Net worth at end',currency.format(year.end),'total'],
+      ].map(([label,value,cls])=>`<div class="${cls==='total'?'total':''}"><dt>${label}</dt><dd${cls==='neg'?' style="color:var(--bad)"':''}>${value}</dd></div>`).join('');
+      const x=months.map(row=>row.date.slice(0,7));
+      Plotly.react('netWorthChart',[
+        {name:'Cash',x,y:months.map(row=>row.cash),type:'bar',marker:{color:lime,pattern:stripes(t)},hovertemplate:'%{y:$,.0f}<extra>Cash</extra>'},
+        {name:'Investments',x,y:months.map(row=>row.investments),type:'bar',marker:{color:orange,pattern:stripes(t)},hovertemplate:'%{y:$,.0f}<extra>Investments</extra>'},
+        {name:'Net worth',x,y:months.map(row=>row.netWorth),type:'scatter',mode:'lines+markers',line:{color:t.line,width:2},marker:{size:5},hovertemplate:'%{y:$,.0f}<extra>Net worth</extra>'},
+      ],baseLayout('',{barmode:'stack',showlegend:true,legend:{orientation:'h',y:1.12,x:1,xanchor:'right'},margin:{l:56,r:16,t:36,b:40},hovermode:'x unified',xaxis:{gridcolor:t.panel,type:'date',tickformat:'%b %Y',dtick:'M1'}}),plotConfig);
+      const flows=months.slice(1), fx2=flows.map(row=>row.date.slice(0,7));
+      Plotly.react('netWorthFlowChart',[
+        {name:'Savings',x:fx2,y:flows.map(row=>row.savings),type:'bar',marker:{color:lime,pattern:stripes(t)},hovertemplate:'%{y:$,.0f}<extra>Savings</extra>'},
+        {name:'Investment returns',x:fx2,y:flows.map(row=>row.returns),type:'bar',marker:{color:orange,pattern:stripes(t)},hovertemplate:'%{y:$,.0f}<extra>Investment returns</extra>'},
+      ],baseLayout('',{barmode:'group',showlegend:true,legend:{orientation:'h',y:1.12,x:1,xanchor:'right'},margin:{l:56,r:16,t:36,b:40},hovermode:'x unified',xaxis:{gridcolor:t.panel,type:'date',tickformat:'%b %Y',dtick:'M1'}}),plotConfig);
+      const invested=netWorth.holdings.reduce((sum,row)=>sum+row.valueAUD,0);
+      byId('holdingsNote').textContent=netWorth.holdingsAsOf?`Units from the Investment project, last changed ${day(netWorth.holdingsAsOf)}`:'';
+      byId('holdingsBody').innerHTML=netWorth.holdings.map(row=>`<tr><td>${esc(row.symbol)} <span style="color:var(--ink-3)">${esc(row.name)}</span></td><td>${esc(row.account)}</td><td class="num">${integer.format(Math.round(row.units*100)/100)}</td><td class="num">${row.price.toLocaleString('en-AU',{maximumFractionDigits:3})} ${esc(row.currency)}</td><td>${esc(day(row.priceDate))}</td><td class="num">${currency.format(row.valueAUD)}</td><td class="num">${invested?(row.valueAUD/invested*100).toFixed(1):'0.0'}%</td></tr>`).join('') + Object.entries(latest.cashAccounts||{}).map(([name,value])=>`<tr><td>Cash <span style="color:var(--ink-3)">${esc(name)}</span></td><td>Cash</td><td class="num"></td><td class="num"></td><td></td><td class="num">${currency.format(value)}</td><td class="num"></td></tr>`).join('') + `<tr class="grand"><td>Total</td><td></td><td></td><td></td><td></td><td class="num">${currency.format(latest.netWorth)}</td><td></td></tr>`;
+    }
+
     function render() {
+      renderNetWorth();
       const range=currentRange(), prior=priorRange(range), rows=filteredRows(range), priorRows=prior ? filteredRows(prior) : null;
       currentRows=rows; renderChips();
       renderKpis(rows, priorRows, range, prior); renderCharts(rows, range); renderIncomeStatement(rows, range); renderCategoryTable(rows, priorRows, range); renderOverviewCards(rows, priorRows, renderRecurring(rows, range), range); renderTransfers(rows); renderAccounts(range); renderQuality(rows); renderTransactions(rows);
