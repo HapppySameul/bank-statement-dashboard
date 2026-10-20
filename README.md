@@ -1,6 +1,6 @@
 # Bank Statement Dashboard
 
-This project parses bank statement PDFs from the supported HSBC and ING layouts, reconciles every statement period using the totals available in each statement, categorises transactions with auditable rules, and generates an offline interactive dashboard.
+This project parses bank statement PDFs from the supported HSBC, ING and BOQ layouts, reconciles every statement period using the totals available in each statement, categorises transactions with auditable rules, and generates an offline interactive dashboard.
 
 ## Folder layout
 
@@ -72,7 +72,7 @@ The source PDF is never modified.
 
 ## Adding the next month's statement
 
-1. Download the complete statement PDF from HSBC or ING.
+1. Download the complete statement PDF from HSBC, ING or BOQ.
 2. Put it in `data/`; there is no need to unlock or re-save it.
 3. Run **Update** (`Dashboard.command`) or double-click `Dashboard.bat`.
 4. Check the final messages in the window. A successful one-month import reports `Imported 1 new PDF(s)`, the appended transaction count, and `Validated and reconciled 1 new statement(s)`.
@@ -92,21 +92,21 @@ The new PDF is unlocked in memory, then checked before anything is appended. If 
 
 Editing `merchant_categories.json` directly affects future imports only. Previously validated CSV rows are intentionally left unchanged unless you edit a category through the dashboard.
 
-If the window reports `No module named ...`, repeat the one-time setup. If it reports a password error, confirm `data/statement_password.txt` exists and contains the current password. If a statement you expected to import was reported as skipped, or a PDF is rejected as incompatible, confirm that it is a complete HSBC or ING statement that matches the requirements below. If a statement does not reconcile, nothing is appended; confirm that the PDF is complete and uses the expected layout before trying again.
+If the window reports `No module named ...`, repeat the one-time setup. If it reports a password error, confirm `data/statement_password.txt` exists and contains the current password. If a statement you expected to import was reported as skipped, or a PDF is rejected as incompatible, confirm that it is a complete HSBC, ING or BOQ statement that matches the requirements below. If a statement does not reconcile, nothing is appended; confirm that the PDF is complete and uses the expected layout before trying again.
 
 ## PDF requirements
 
-The parser supports the machine-generated HSBC Everyday Global statement layout and ING interim statements. A suitable input must:
+The parser supports the machine-generated HSBC Everyday Global statement layout, ING interim statements and BOQ savings statements. A suitable input must:
 
 - be a complete PDF statement, including every transaction page and the statement totals;
 - contain selectable/searchable text, not photographs or scanned page images;
 - contain a supported transaction table with date, description, debit/withdrawal, credit/deposit, and balance columns in the expected positions;
-- include the printed opening and closing balances; HSBC statements must also include printed debit and credit totals, while ING statements are reconciled from opening balance + deposits - withdrawals = closing balance because ING's interim layout does not print transaction totals; and
+- include the printed opening and closing balances; HSBC statements must also include printed debit and credit totals, while ING statements are reconciled from opening balance + deposits - withdrawals = closing balance because ING's interim layout does not print transaction totals. BOQ statements must match their printed totals, and every row must match its printed running balance; and
 - be either unencrypted or unlockable with the password stored in `data/statement_password.txt`.
 
 Password-protected PDFs are opened directly in memory; the source PDF remains encrypted and is never modified. Keep the password only in `data/statement_password.txt`, never in a file name, the code, or this README.
 
-There is no required statement file name. Each previously unseen PDF in `data/` is checked to see whether it is an HSBC or ING statement. A PDF that is neither (a receipt or an invoice, for example) is skipped with a `Skipped ...: not a recognised HSBC or ING statement` message, and the rest of the import carries on. Skipped PDFs are not recorded in the import log, so they are checked again on the next run; move them elsewhere to silence the message. A PDF that looks like an HSBC or ING statement but cannot be read or reconciled still stops the import, so a layout change is never skipped silently.
+There is no required statement file name. Each previously unseen PDF in `data/` is checked to see whether it is an HSBC, ING or BOQ statement. A PDF that is neither (a receipt or an invoice, for example) is skipped with a `Skipped ...: not a recognised bank statement` message, and the rest of the import carries on. Skipped PDFs are not recorded in the import log, so they are checked again on the next run; move them elsewhere to silence the message. A PDF that looks like a supported statement but cannot be read or reconciled still stops the import, so a layout change is never skipped silently.
 
 ## Editing categories
 
@@ -162,9 +162,21 @@ ING interim statements do not print debit or credit totals, so an ING statement 
 
 The dashboard exposes reconciliation and category-review status alongside the financial breakdowns.
 
+## Net worth
+
+The Net worth section reads your holdings from the separate Investment project, which must sit next to this folder (`~/Desktop/Investment`). The launcher passes it as `--investment-dir`. Units and their dates come from `portfolio/current_portfolio.json`, so record new trades there. Bank cash comes from the imported statements. If the Investment project's AUD cash record is a hand-kept balance of one of your bank accounts, name that account in the git-ignored `data/net_worth_settings.json`, for example `{"saver_account": "ING"}`. That account's statements then take priority, and the record is only used for dates after its last imported statement. Without the file, the record is listed as a separate saver.
+
+BOQ shows every incoming payment as `From: ...`, so incoming payments are counted as transfers. To count an employer's payments as salary, add a pattern under `rule_patterns` → `income_salary` in `data/merchant_categories.json`, for example `"income_salary": ["\\bacme pty\\b"]`. That file is git-ignored, so the employer's name stays off GitHub.
+
+Prices and AUD exchange rates are Yahoo daily closes, fetched each time the dashboard is built. Only ticker symbols are sent to Yahoo. The last good prices are kept in `data/price_history.json`, so a build without internet still works and the page says which prices are cached. Yahoo's closes are split-adjusted, and each recorded quantity is scaled by the splits after its own date. That way a split never shows up as a purchase.
+
+Each month's change in net worth is split in two. **Investment returns** are the change in value of the units held, from prices and exchange rates. **Savings** is everything else: income kept after spending. Buying shares only moves money from cash to investments, so it counts as neither. The series starts at the first holdings record, because that record is a snapshot of shares you already held.
+
 ## Privacy
 
 `data/` is git-ignored, and so are PDFs, `bank_transactions.csv`, `statement_reconciliation.json`, `statement_import_log.json`, `merchant_categories.json`, `statement_password.txt` and `index.html` anywhere else in the folder. The Tests workflow fails if any of them is ever added to the repository.
+
+Personal details are also kept out of commits. List them (names, account numbers, address, employer, holdings), one per line, in the git-ignored `data/private_terms.txt`. Each run of `Dashboard.command` installs git hooks that run `src/privacy_check.py` and stop any commit whose changes, file names or message contain one of them. The hooks print only the first two characters of a match.
 
 `index.html` embeds every transaction so that it works offline, so it is published to Cloudflare from your computer rather than through git.
 
@@ -187,13 +199,14 @@ One-time setup:
 
 ## Tests
 
-Run `python -m pytest -q` from the repository root. The tests in `tests/` use generated sample HSBC and ING statements (see `tests/statement_fixtures.py`) and run anywhere, including on GitHub Actions for every push. No test reads real statements.
+Run `python -m pytest -q` from the repository root. The tests in `tests/` use generated sample HSBC, ING and BOQ statements (see `tests/statement_fixtures.py`) and run anywhere, including on GitHub Actions for every push. No test reads real statements.
 
 ## Dashboard sections
 
 The dashboard is generated from `src/dashboard_template.html`; edit that file to change its layout.
 
 - **Overview** - a card layout with the closing balance and a monthly money in vs money out chart, money in, money out and net savings compared with the prior period of the same length (or the same number of calendar months), a money out vs money in bar, short insights, a cost analysis by category, a savings-rate gauge, a recurring payments tracker, a card per bank account with quick actions (export, statement, review queue, filters, print) and the latest transactions.
+- **Net worth** - bank cash plus investments in AUD: today's total, a year bridge (net worth at the start of the year, plus savings from income, plus investment returns), month-end net worth, monthly savings against investment returns, and a holdings table. See [Net worth](#net-worth) below.
 - **Income statement** - a month-by-month table of income lines, spending by category, net savings and savings rate, with totals and monthly averages. Export CSV downloads it.
 - **Spending** - category breakdown against the prior period, monthly spending by category, top merchants, and recurring payments (merchants charged in three or more months, with fixed-amount charges listed first).
 - **Accounts & reconciliation** - one card per bank, the daily balance of each account and the combined total, a register of every statement period with its opening and closing balances, warnings for statements that do not reconcile or for missing statement periods, net transfers and data-quality counts.

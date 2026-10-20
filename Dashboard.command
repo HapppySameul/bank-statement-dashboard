@@ -17,12 +17,36 @@ set -u
 
 ROOT="$(cd -- "$(dirname -- "$0")" && pwd)"
 DATA="$ROOT/data"
+# The separate Investment project (holdings for the Net worth section) sits
+# next to this folder on the Desktop.
+INVESTMENT="$(dirname -- "$ROOT")/Investment"
 cd "$ROOT" || exit 1
 
 PYTHON=python3
 if [ -x "$ROOT/.venv/bin/python" ]; then
     PYTHON="$ROOT/.venv/bin/python"
 fi
+
+# Block commits that contain anything listed in the git-ignored
+# data/private_terms.txt (names, account numbers, address, employer...).
+# Reinstalled on every run so the hooks stay in place.
+install_privacy_hooks() {
+    HOOKS="$(git rev-parse --git-path hooks 2>/dev/null)" || return 0
+    mkdir -p "$HOOKS"
+    for HOOK in pre-commit commit-msg; do
+        ARGS='--staged'
+        [ "$HOOK" = commit-msg ] && ARGS='--message "$1"'
+        cat > "$HOOKS/$HOOK" <<HOOK
+#!/bin/sh
+# Installed by Dashboard.command: keep personal details out of this public repo.
+PY=python3
+[ -x .venv/bin/python ] && PY=.venv/bin/python
+exec "\$PY" src/privacy_check.py $ARGS
+HOOK
+        chmod +x "$HOOKS/$HOOK"
+    done
+}
+install_privacy_hooks
 
 # Keep this Mac's copy of the code in step with GitHub before every run: offer
 # to commit and push local code changes, then bring in anything new from GitHub.
@@ -102,7 +126,10 @@ build() {
         --categories-file "$DATA/merchant_categories.json" \
         --reconciliation-file "$DATA/statement_reconciliation.json" \
         --import-log-file "$DATA/statement_import_log.json" \
-        --output-html "$DATA/index.html"
+        --output-html "$DATA/index.html" \
+        --investment-dir "$INVESTMENT" \
+        --price-cache-file "$DATA/price_history.json" \
+        --net-worth-settings "$DATA/net_worth_settings.json"
 }
 
 # Upload data/index.html to Cloudflare. The dashboard embeds every transaction,

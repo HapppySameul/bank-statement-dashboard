@@ -18,6 +18,7 @@ from bank_statement_dashboard import (
 )
 from statement_fixtures import (
     write_hsbc_statement,
+    write_sample_boq_statement,
     write_sample_hsbc_statement,
     write_sample_ing_statement,
     write_unrelated_pdf,
@@ -142,6 +143,32 @@ def test_bank_detection(tmp_path):
     assert detect_statement_bank(write_sample_hsbc_statement(tmp_path / "a.pdf")) == "hsbc"
     assert detect_statement_bank(write_sample_ing_statement(tmp_path / "b.pdf")) == "ing"
     assert detect_statement_bank(write_unrelated_pdf(tmp_path / "c.pdf")) is None
+    assert detect_statement_bank(write_sample_boq_statement(tmp_path / "d.pdf")) == "boq"
+
+
+def test_boq_statement_reconciles_every_row_and_resolves_the_year(tmp_path):
+    categories = {"rule_patterns": {"income_salary": [r"\bacme payroll\b"]}}
+    records, (summary,) = parse_statement_pdf_with_summary(write_sample_boq_statement(tmp_path / "boq.pdf"), categories)
+
+    assert summary["bank"] == "BOQ" and summary["account_name"] == "Future Saver"
+    assert summary["reconciled"] and summary["mismatched_rows"] == 0
+    assert summary["closing_balance"] == pytest.approx(3762.34)
+    assert [row["date"] for row in records] == ["2025-12-14", "2025-12-20", "2025-12-31", "2026-01-05"]
+    assert [row["kind"] for row in records] == ["income", "outgoing_transfer", "income", "incoming_transfer"]
+    assert (records[0]["category"], records[0]["subcategory"]) == ("Income", "Salary")
+    assert (records[2]["category"], records[2]["subcategory"]) == ("Income", "Interest")
+    # Continuation lines join the description; notes further down the page do not.
+    assert records[1]["raw_description"] == "To: Everyday Account 123456789"
+    assert records[3]["raw_description"] == "From: Everyday Account 123456789"
+    assert records[1]["merchant"] == "Everyday Account"
+
+
+def test_boq_row_with_a_wrong_running_balance_does_not_reconcile(tmp_path):
+    path = write_sample_boq_statement(tmp_path / "boq.pdf", misprinted_balance_row=1)
+    _, (summary,) = parse_statement_pdf_with_summary(path, {})
+
+    assert summary["mismatched_rows"] == 1
+    assert not summary["reconciled"]
 
 
 def run_import(monkeypatch, folder: Path) -> None:
@@ -158,7 +185,7 @@ def test_monthly_import_appends_new_statements_and_skips_unrelated_pdfs(tmp_path
     run_import(monkeypatch, tmp_path)
     output = capsys.readouterr().out
     assert "Imported 2 new PDF(s)" in output
-    assert "Skipped coffee_grinder_receipt.pdf: not a recognised HSBC or ING statement" in output
+    assert "Skipped coffee_grinder_receipt.pdf: not a recognised bank statement" in output
 
     history = pd.read_csv(tmp_path / "bank_transactions.csv")
     assert len(history) == 14
