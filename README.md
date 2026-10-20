@@ -42,10 +42,10 @@ The launchers use `.venv` when it exists and fall back to the system Python othe
 On macOS, double-click `Dashboard.command` in Finder and pick an option:
 
 1. **Update** imports new statements from `data/`, publishes the dashboard to Cloudflare, and opens it in your browser with editable categories.
-2. **Publish** publishes the current dashboard on its own, for example after editing categories.
+2. **Publish** publishes the current dashboard on its own, whether or not anything changed.
 3. **Edit** opens the current dashboard with editable categories without importing anything.
 
-Keep the Terminal window open while editing categories; changes are saved automatically to `data/bank_transactions.csv` and `data/merchant_categories.json`. Opening `data/index.html` directly in Finder uses the browser's `file://` mode, which cannot write changes back.
+Keep the Terminal window open while editing categories; changes are saved automatically to `data/bank_transactions.csv` and `data/merchant_categories.json`, and published online about 30 seconds after the last edit. Opening `data/index.html` directly in Finder uses the browser's `file://` mode, which cannot write changes back.
 
 Every run first syncs the code with GitHub, so this Mac always has the latest version. If you changed any code locally, the launcher lists the changes and offers to commit and push them; it then pulls anything new from GitHub (for example changes merged from a pull request) and pushes local commits. `data/` is git-ignored and never synced, and the launcher refuses to commit PDFs, CSVs or `index.html` even if they appear elsewhere. If GitHub cannot be reached, it says so and carries on with the local copy.
 
@@ -53,7 +53,7 @@ From a terminal (macOS or Linux), run the same steps by name:
 
 ```sh
 ./Dashboard.command update    # import, publish, then edit
-./Dashboard.command build     # import and rebuild data/index.html only
+./Dashboard.command build     # import, rebuild data/index.html, publish if anything changed
 ./Dashboard.command publish
 ./Dashboard.command edit
 ./Dashboard.command sync      # only sync the code with GitHub
@@ -182,7 +182,9 @@ Personal details are also kept out of commits. List them (names, account numbers
 
 ### Publishing to Cloudflare
 
-**Publish** (and **Update**) copies `data/index.html` and `deploy/_headers` into an otherwise empty `deploy/site/` folder and uploads only that folder with [Wrangler](https://developers.cloudflare.com/workers/wrangler/), using the Worker defined in `deploy/wrangler.jsonc`.
+The online dashboard follows your data on its own. **Update**, `build` and the category editor publish whenever the ledger, the statement checks or the dashboard code changed since the last successful publish, and say "already up to date" otherwise. The editor waits until edits have stopped for 30 seconds, so a run of edits is one upload, and it publishes any last edit when you stop it with Ctrl+C. The last published state is remembered in `data/.published_fingerprint`; delete it to force the next run to publish.
+
+**Publish** (and every automatic publish) copies `data/index.html` and `deploy/_headers` into an otherwise empty `deploy/site/` folder and uploads only that folder with [Wrangler](https://developers.cloudflare.com/workers/wrangler/), using the Worker defined in `deploy/wrangler.jsonc`.
 
 One-time setup:
 
