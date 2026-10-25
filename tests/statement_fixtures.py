@@ -96,6 +96,63 @@ def write_hsbc_statement(
     return path
 
 
+def write_hsbc_multi_account_statement(
+    path: Path,
+    period: str,
+    accounts: Sequence[Tuple[float, Sequence[HsbcRow]]],
+) -> Path:
+    """Write one HSBC period listing several accounts, each with its own totals.
+
+    Each account is (opening balance, rows) and gets its own header, opening
+    balance, closing balance and printed transaction totals, like a statement
+    that covers more than one account.
+    """
+    document = fitz.open()
+    page = document.new_page(width=612, height=792)
+    text = _writer(page)
+    text(300, 30, f"STATEMENT PERIOD FROM {period}")
+    text(500, 45, "Page 1 of 1")
+    first_date = period.split(" TO ")[0][:6]
+    y = 64
+    for opening_balance, rows in accounts:
+        y += 16
+        text(50, y, "Date")
+        text(100, y, "Transaction Details")
+        text(306, y, "Debits/Withdrawals")
+        text(412, y, "Credits/Deposits")
+        text(520, y, "Balance")
+        y += 20
+        text(46, y, first_date)
+        text(98, y, "BALANCE BROUGHT FORWARD")
+        text(520, y, _money(opening_balance))
+        total_debits = 0.0
+        total_credits = 0.0
+        for row_date, description, debit, credit in rows:
+            y += 16
+            if row_date:
+                text(46, y, row_date)
+            text(98, y, description)
+            if debit:
+                text(330, y, debit)
+                total_debits += float(debit.replace(",", ""))
+            if credit:
+                text(436, y, credit)
+                total_credits += float(credit.replace(",", ""))
+        y += 16
+        text(98, y, "CLOSING BALANCE")
+        text(520, y, _money(round(opening_balance + total_credits - total_debits, 2)))
+        y += 16
+        text(98, y, "Transaction Total")
+        text(330, y, _money(total_debits))
+        text(436, y, _money(total_credits))
+        y += 16
+        text(98, y, "Transaction Number")
+        text(375, y, str(sum(1 for row in rows if row[2] or row[3])))
+    document.save(path)
+    document.close()
+    return path
+
+
 def write_ing_statement(
     path: Path,
     start: str,

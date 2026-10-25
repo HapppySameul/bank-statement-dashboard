@@ -17,6 +17,7 @@ from bank_statement_dashboard import (
     parse_statement_pdf_with_summary,
 )
 from statement_fixtures import (
+    write_hsbc_multi_account_statement,
     write_hsbc_statement,
     write_sample_boq_statement,
     write_sample_hsbc_statement,
@@ -49,6 +50,37 @@ def test_hsbc_periods_reconcile_to_printed_totals(hsbc):
         assert summary["debit_difference"] == 0
         assert summary["credit_difference"] == 0
         assert summary["balance_difference"] == 0
+
+
+def test_hsbc_statement_with_several_accounts_reconciles_across_all_of_them(tmp_path):
+    path = write_hsbc_multi_account_statement(
+        tmp_path / "hsbc_multi_account.pdf",
+        "24 Sep 2026 TO 23 Oct 2026",
+        [
+            (100.00, [("25 Sep", "TRANSFER TO SAVINGS", "40.00", None)]),
+            (0.00, [("25 Sep", "TRANSFER FROM EVERYDAY", None, "40.00")]),
+            (
+                250.00,
+                [
+                    ("26 Sep", "SAMPLE GROCER", "12.50", None),
+                    ("", "SAMPLE CAFE", "4.50", None),
+                    ("30 Sep", "SAMPLE REFUND", None, "7.00"),
+                ],
+            ),
+        ],
+    )
+
+    records, summaries = parse_statement_pdf_with_summary(path, {})
+
+    assert len(records) == 5
+    assert len(summaries) == 1
+    summary = summaries[0]
+    assert summary["reconciled"]
+    assert summary["printed_debits"] == summary["computed_debits"] == 57.00
+    assert summary["printed_credits"] == summary["computed_credits"] == 47.00
+    assert summary["opening_balance"] == 350.00
+    assert summary["closing_balance"] == 340.00
+    assert summary["balance_difference"] == 0
 
 
 def test_hsbc_year_rollover_is_resolved_per_statement_period(hsbc):
