@@ -3,13 +3,16 @@
 #
 # Double-click this file in Finder for a menu, or run it with a command:
 #   ./Dashboard.command update    import new statements, publish, then open the editor
-#   ./Dashboard.command build     import new statements and rebuild the dashboard only
+#   ./Dashboard.command build     import new statements, rebuild, and publish if anything changed
 #   ./Dashboard.command publish   publish the current dashboard to Cloudflare
-#   ./Dashboard.command edit      open the dashboard with editable categories
+#   ./Dashboard.command edit      open the dashboard with editable categories; edits publish themselves
 #   ./Dashboard.command sync      only sync the code with GitHub
 #
 # Every run first syncs the code with GitHub (see sync below), so this Mac
 # always has the latest version.
+#
+# The online copy follows the data on its own: build, update and edit publish
+# whenever the ledger (or the code that draws it) changed since the last publish.
 #
 # Statements, the ledger and the generated dashboard live in data/, which is
 # git-ignored.
@@ -53,6 +56,10 @@ install_privacy_hooks
 # data/ is git-ignored, so statements, the ledger and the dashboard never leave
 # this machine. Any problem only prints a warning; the dashboard still runs.
 sync() {
+    # The editing server publishes in the background and must never stop to ask.
+    if [ "${DASHBOARD_SKIP_SYNC:-0}" = 1 ]; then
+        return 0
+    fi
     if ! command -v git >/dev/null 2>&1 || ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
         return 0
     fi
@@ -116,7 +123,7 @@ sync() {
     echo
 }
 
-build() {
+rebuild() {
     mkdir -p "$DATA"
     echo "Updating bank statement dashboard..."
     echo
@@ -149,7 +156,43 @@ publish() {
     rm -rf deploy/site
     mkdir deploy/site
     cp "$DATA/index.html" deploy/_headers deploy/site/
-    npx --yes wrangler@4 deploy --config deploy/wrangler.jsonc
+    FINGERPRINT=$(fingerprint)
+    npx --yes wrangler@4 deploy --config deploy/wrangler.jsonc || return $?
+    echo "$FINGERPRINT" > "$PUBLISHED_FINGERPRINT"
+}
+
+# What the online dashboard is drawn from: the ledger, the statement checks and
+# the code that turns them into the page. The page itself carries a build time,
+# so hashing it would make every rebuild look new.
+PUBLISHED_FINGERPRINT="$DATA/.published_fingerprint"
+fingerprint() {
+    cat "$DATA/bank_transactions.csv" "$DATA/statement_reconciliation.json" \
+        src/bank_statement_dashboard.py src/dashboard_template.html deploy/_headers 2>/dev/null |
+        "$PYTHON" -c 'import hashlib, sys; print(hashlib.sha256(sys.stdin.buffer.read()).hexdigest())'
+}
+
+# Publish only when something changed since the last successful publish. A
+# failure only affects the online copy, so it warns and carries on.
+publish_if_changed() {
+    if [ -f "$PUBLISHED_FINGERPRINT" ] && [ "$(fingerprint)" = "$(cat "$PUBLISHED_FINGERPRINT")" ]; then
+        echo "The online dashboard is already up to date."
+        return 0
+    fi
+    echo "The dashboard has new data. Publishing it to Cloudflare..."
+    if publish; then
+        echo "Online dashboard updated."
+    else
+        echo "Publishing failed; the online dashboard was not updated." >&2
+        echo "Choose Publish from the menu to try again." >&2
+        return 1
+    fi
+}
+
+build() {
+    rebuild || return $?
+    echo
+    publish_if_changed
+    return 0
 }
 
 # Serve the dashboard on localhost so category edits save back to data/.
@@ -166,9 +209,14 @@ edit() {
         return 1
     fi
 
-    "$PYTHON" src/dashboard_server.py --directory "$DATA" --port "$PORT" &
+    # The server publishes on its own shortly after the last category edit.
+    DASHBOARD_SKIP_SYNC=1 "$PYTHON" src/dashboard_server.py --directory "$DATA" --port "$PORT" \
+        --publish-after-edits 30 --publish-command "$ROOT/Dashboard.command" &
     SERVER_PID=$!
-    trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT INT TERM
+    trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT TERM HUP
+    # Ctrl+C stops the server (it receives the signal too); carry on below so an
+    # edit made just before stopping is still published.
+    trap ':' INT
     sleep 1
     if ! kill -0 "$SERVER_PID" 2>/dev/null; then
         wait "$SERVER_PID"
@@ -187,11 +235,16 @@ edit() {
     fi
     echo
     echo "Leave this window open while using the editable dashboard. Press Ctrl+C to stop."
+    echo "Category edits are published online about 30 seconds after the last change."
     wait "$SERVER_PID"
+    wait "$SERVER_PID" 2>/dev/null
+    trap - INT
+    echo
+    publish_if_changed
 }
 
 update() {
-    build
+    rebuild
     STATUS=$?
     if [ "$STATUS" -ne 0 ]; then
         echo
@@ -202,11 +255,7 @@ update() {
     echo
     echo "Dashboard update completed successfully."
     # A publishing failure only affects the online copy; the local editor still opens.
-    echo "Publishing the dashboard to Cloudflare..."
-    if ! publish; then
-        echo "Publishing failed; the online dashboard was not updated."
-        echo "Choose Publish from the menu to try again."
-    fi
+    publish_if_changed
     echo
     echo "Starting the local dashboard server with editable categories..."
     edit
@@ -236,6 +285,7 @@ fi
 
 case "$COMMAND" in
     update|build|publish|edit) "$COMMAND"; STATUS=$? ;;
+    publish-if-changed) publish_if_changed; STATUS=$? ;;
     sync) STATUS=0 ;;
     none) STATUS=2 ;;
     *)

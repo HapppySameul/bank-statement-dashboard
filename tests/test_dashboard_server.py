@@ -3,16 +3,30 @@
 import http.client
 import json
 import threading
+import time
 
 import pandas as pd
 import pytest
 
 from bank_statement_dashboard import EXPECTED_COLUMNS, build_dashboard
-from dashboard_server import make_server
+from dashboard_server import DelayedPublisher, make_server
+
+
+class RecordingPublisher:
+    def __init__(self):
+        self.scheduled = 0
+
+    def schedule(self):
+        self.scheduled += 1
 
 
 @pytest.fixture
-def server(tmp_path):
+def publisher():
+    return RecordingPublisher()
+
+
+@pytest.fixture
+def server(tmp_path, publisher):
     row = {column: "" for column in EXPECTED_COLUMNS}
     row.update(
         transaction_id="t1",
@@ -33,7 +47,7 @@ def server(tmp_path):
     build_dashboard(frame, tmp_path / "index.html", [])
     (tmp_path / "README.md").write_text("not served", encoding="utf-8")
 
-    httpd = make_server(tmp_path, 0)
+    httpd = make_server(tmp_path, 0, publisher)
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
     yield httpd.server_address[1], tmp_path
@@ -106,3 +120,26 @@ def test_cross_site_category_edit_is_rejected(server):
     assert response.status == 415
     assert request(port, "OPTIONS", "/api/update-category")[0].status == 405
     assert pd.read_csv(root / "bank_transactions.csv").loc[0, "category"] == "Uncategorised"
+
+
+def test_saved_edit_schedules_a_publish(server, publisher):
+    port, _ = server
+    category_update(port, Origin="https://attacker.example", **{"Sec-Fetch-Site": "cross-site"})
+    assert publisher.scheduled == 0
+    response, body = category_update(port, Origin=f"http://127.0.0.1:{port}", **{"Sec-Fetch-Site": "same-origin"})
+    assert response.status == 200, body
+    assert publisher.scheduled == 1
+
+
+def test_a_burst_of_edits_publishes_once(tmp_path):
+    marker = tmp_path / "runs"
+    script = tmp_path / "launcher.sh"
+    script.write_text(f'echo "$1" >> "{marker}"\n', encoding="utf-8")
+    delayed = DelayedPublisher(["/bin/sh", str(script), "publish-if-changed"], 0.2)
+    for _ in range(3):
+        delayed.schedule()
+    deadline = time.monotonic() + 5
+    while not marker.exists() and time.monotonic() < deadline:
+        time.sleep(0.05)
+    time.sleep(0.4)
+    assert marker.read_text(encoding="utf-8").splitlines() == ["publish-if-changed"]
