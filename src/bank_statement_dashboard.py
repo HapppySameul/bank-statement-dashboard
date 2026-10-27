@@ -842,6 +842,14 @@ def detect_statement_bank(path: Path) -> Optional[str]:
         document.close()
 
 
+def _add_to_summary(summary: Dict[str, object], key: str, value: Optional[float]) -> None:
+    """Add one account's printed figure to the statement period's running total."""
+    if value is None:
+        return
+    current = summary.get(key)
+    summary[key] = round(float(value) + (float(current) if current is not None else 0.0), 2)
+
+
 def _parse_open_statement_document(
     path: Path,
     known_map: Dict[str, object],
@@ -951,19 +959,19 @@ def _parse_open_statement_document(
             credit = _column_money(items, 412, 515)
             balance = _column_money(items, 515, 555)
 
+            # A statement can hold several accounts, each with its own opening
+            # balance, closing balance and printed totals, so they add up per period.
             if "balance brought forward" in lower:
-                if balance is not None:
-                    summary["opening_balance"] = balance
+                _add_to_summary(summary, "opening_balance", balance)
                 continue
             if "closing balance" in lower:
                 finalize_pending()
-                if balance is not None:
-                    summary["closing_balance"] = balance
+                _add_to_summary(summary, "closing_balance", balance)
                 continue
             if lower.startswith("transaction total") or "transaction total" in lower:
                 finalize_pending()
-                summary["printed_debits"] = debit
-                summary["printed_credits"] = credit
+                _add_to_summary(summary, "printed_debits", debit)
+                _add_to_summary(summary, "printed_credits", credit)
                 continue
             if lower.startswith("transaction number") or "end of statement" in lower:
                 finalize_pending()
